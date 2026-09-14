@@ -1,12 +1,25 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { PrismaService } from './prisma/prisma.service.js';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getHello() {
+    return {
+      name: 'Structa CMS API',
+      status: 'running',
+    };
+  }
+
+  @Get('health/database')
+  async databaseHealth() {
+    const userCount = await this.prisma.user.count();
+
+    return {
+      database: 'connected',
+      users: userCount,
+    };
   }
 }
