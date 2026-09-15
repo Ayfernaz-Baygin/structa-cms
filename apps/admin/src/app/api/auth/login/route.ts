@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 
+import { API_URL, AUTH_COOKIE_NAME } from '@/lib/api';
+
 export async function POST(request: Request) {
   const body = await request.json();
 
-  const response = await fetch('http://localhost:4000/auth/login', {
+  const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -24,7 +26,7 @@ export async function POST(request: Request) {
   });
 
   result.cookies.set({
-    name: 'structa_access_token',
+    name: AUTH_COOKIE_NAME,
     value: data.accessToken,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
