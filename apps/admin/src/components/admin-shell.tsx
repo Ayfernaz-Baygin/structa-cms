@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 
 import type { AuthUser } from '@/lib/api';
+import { isRouteAllowed } from '@/lib/permissions';
 
 interface NavItem {
   label: string;
@@ -89,6 +90,17 @@ function GearIcon({ className }: { className?: string }) {
   );
 }
 
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className={className}>
+      <circle cx="9" cy="8" r="3.25" />
+      <path d="M3.5 20c.7-3.2 3-5 5.5-5s4.8 1.8 5.5 5" />
+      <circle cx="17.5" cy="8.5" r="2.5" />
+      <path d="M15.3 11c2 .3 3.7 1.9 4.3 4.3" />
+    </svg>
+  );
+}
+
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', enabled: true, icon: GridIcon },
   { label: 'Sayfalar', href: '/pages', enabled: true, icon: DocumentIcon },
@@ -98,6 +110,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Medya', href: '/media', enabled: true, icon: ImageIcon },
   { label: 'Menüler', href: '/menus', enabled: true, icon: ListIcon },
   { label: 'Ayarlar', href: '/settings', enabled: true, icon: GearIcon },
+  { label: 'Kullanıcılar', href: '/users', enabled: true, icon: UsersIcon },
 ];
 
 function getInitials(user: AuthUser) {
@@ -121,6 +134,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function AdminShell({ user, children }: { user: AuthUser; children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const visibleNavItems = NAV_ITEMS.filter((item) => isRouteAllowed(item.href, user.role));
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -143,7 +157,7 @@ export function AdminShell({ user, children }: { user: AuthUser; children: React
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {NAV_ITEMS.map((item) => (
+          {visibleNavItems.map((item) => (
             <SidebarLink key={item.href} item={item} onNavigate={() => setMobileOpen(false)} />
           ))}
         </nav>

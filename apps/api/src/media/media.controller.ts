@@ -19,6 +19,9 @@ import type { Request } from 'express';
 import { memoryStorage } from 'multer';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { UserRole } from '../generated/prisma/enums.js';
 import { QueryMediaDto } from './dto/query-media.dto.js';
 import { UpdateMediaDto } from './dto/update-media.dto.js';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from './media.constants.js';
@@ -32,7 +35,8 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR, UserRole.AUTHOR)
 @Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
@@ -69,11 +73,13 @@ export class MediaController {
     return this.mediaService.create(file, request.user.sub);
   }
 
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateMediaDto) {
     return this.mediaService.update(id, dto);
   }
 
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
   @Delete(':id')
   @HttpCode(204)
   async remove(@Param('id') id: string) {

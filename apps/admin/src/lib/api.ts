@@ -10,6 +10,19 @@ export interface AuthUser {
   role: string;
 }
 
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
+
+export interface ManagedUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type PageStatus = 'DRAFT' | 'PUBLISHED';
 
 export interface Page {

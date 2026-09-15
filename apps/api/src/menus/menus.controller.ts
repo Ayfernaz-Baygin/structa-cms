@@ -11,6 +11,9 @@ import {
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { UserRole } from '../generated/prisma/enums.js';
 import { CreateMenuItemDto } from './dto/create-menu-item.dto.js';
 import { CreateMenuDto } from './dto/create-menu.dto.js';
 import { ReorderMenuItemsDto } from './dto/reorder-menu-items.dto.js';
@@ -18,7 +21,8 @@ import { UpdateMenuItemDto } from './dto/update-menu-item.dto.js';
 import { UpdateMenuDto } from './dto/update-menu.dto.js';
 import { MenusService } from './menus.service.js';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
 @Controller('menus')
 export class MenusController {
   constructor(private readonly menusService: MenusService) {}

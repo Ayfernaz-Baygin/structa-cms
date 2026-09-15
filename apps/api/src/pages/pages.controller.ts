@@ -11,6 +11,9 @@ import {
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { UserRole } from '../generated/prisma/enums.js';
 import { CreatePageSectionDto } from './dto/create-page-section.dto.js';
 import { CreatePageDto } from './dto/create-page.dto.js';
 import { ReorderPageSectionsDto } from './dto/reorder-page-sections.dto.js';
@@ -18,7 +21,8 @@ import { UpdatePageSectionDto } from './dto/update-page-section.dto.js';
 import { UpdatePageDto } from './dto/update-page.dto.js';
 import { PagesService } from './pages.service.js';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
 @Controller('pages')
 export class PagesController {
   constructor(private readonly pagesService: PagesService) {}

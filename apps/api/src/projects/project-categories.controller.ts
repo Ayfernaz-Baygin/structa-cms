@@ -11,11 +11,15 @@ import {
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { UserRole } from '../generated/prisma/enums.js';
 import { CreateProjectCategoryDto } from './dto/create-project-category.dto.js';
 import { UpdateProjectCategoryDto } from './dto/update-project-category.dto.js';
 import { ProjectCategoriesService } from './project-categories.service.js';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
 @Controller('project-categories')
 export class ProjectCategoriesController {
   constructor(private readonly projectCategoriesService: ProjectCategoriesService) {}

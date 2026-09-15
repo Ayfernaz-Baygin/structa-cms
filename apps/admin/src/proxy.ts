@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { API_URL, AUTH_COOKIE_NAME, type AuthUser } from '@/lib/api';
+import { isRouteAllowed } from '@/lib/permissions';
 
 const PUBLIC_ONLY_PATHS = new Set(['/login']);
 
@@ -22,6 +23,10 @@ export async function proxy(request: NextRequest) {
 
   if (isPublicOnlyPath || pathname === '/') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  if (!isRouteAllowed(pathname, user.role)) {
+    return NextResponse.redirect(new URL('/403', request.url));
   }
 
   const requestHeaders = new Headers(request.headers);

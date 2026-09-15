@@ -1,6 +1,7 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { ContentStatus } from '../generated/prisma/enums.js';
+import type { CurrentUserPayload } from '../auth/current-user.decorator.js';
+import { ContentStatus, UserRole } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreatePostDto } from './dto/create-post.dto.js';
 import { UpdatePostDto } from './dto/update-post.dto.js';
@@ -21,14 +22,18 @@ const POST_INCLUDE = {
 export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
+  findAll(currentUser: CurrentUserPayload) {
+    // Authors only ever see their own posts, everyone else sees all of them.
+    const where = currentUser.role === UserRole.AUTHOR ? { authorId: currentUser.sub } : {};
+
     return this.prisma.post.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: POST_INCLUDE,
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUser?: CurrentUserPayload) {
     const post = await this.prisma.post.findUnique({
       where: { id },
       include: POST_INCLUDE,
@@ -38,10 +43,12 @@ export class PostsService {
       throw new NotFoundException('Yazı bulunamadı.');
     }
 
+    this.ensureOwnership(post, currentUser);
+
     return post;
   }
 
-  async create(dto: CreatePostDto, authorId: string) {
+  async create(dto: CreatePostDto, currentUser: CurrentUserPayload) {
     await this.ensureSlugAvailable(dto.slug);
 
     if (dto.categoryId) {
@@ -49,6 +56,7 @@ export class PostsService {
     }
 
     const status = dto.status ?? ContentStatus.DRAFT;
+    this.ensureCanSetStatus(status, currentUser);
 
     return this.prisma.post.create({
       data: {
@@ -61,15 +69,16 @@ export class PostsService {
         seoTitle: dto.seoTitle,
         seoDescription: dto.seoDescription,
         categoryId: dto.categoryId ?? null,
-        authorId,
+        authorId: currentUser.sub,
         publishedAt: status === ContentStatus.PUBLISHED ? new Date() : null,
       },
       include: POST_INCLUDE,
     });
   }
 
-  async update(id: string, dto: UpdatePostDto) {
-    const existing = await this.findOne(id);
+  async update(id: string, dto: UpdatePostDto, currentUser: CurrentUserPayload) {
+    // findOne enforces that an AUTHOR can only touch their own post.
+    const existing = await this.findOne(id, currentUser);
 
     if (dto.slug && dto.slug !== existing.slug) {
       await this.ensureSlugAvailable(dto.slug);
@@ -77,6 +86,10 @@ export class PostsService {
 
     if (dto.categoryId) {
       await this.ensureCategoryExists(dto.categoryId);
+    }
+
+    if (dto.status) {
+      this.ensureCanSetStatus(dto.status, currentUser);
     }
 
     const nextStatus = dto.status ?? existing.status;
@@ -103,12 +116,24 @@ export class PostsService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, currentUser: CurrentUserPayload) {
+    await this.findOne(id, currentUser);
 
     await this.prisma.post.delete({
       where: { id },
     });
+  }
+
+  private ensureOwnership(post: { authorId: string }, currentUser?: CurrentUserPayload) {
+    if (currentUser?.role === UserRole.AUTHOR && post.authorId !== currentUser.sub) {
+      throw new ForbiddenException('Bu yazı üzerinde işlem yapma yetkiniz yok.');
+    }
+  }
+
+  private ensureCanSetStatus(status: ContentStatus, currentUser: CurrentUserPayload) {
+    if (currentUser.role === UserRole.AUTHOR && status === ContentStatus.PUBLISHED) {
+      throw new ForbiddenException('Yazarlar içerik yayınlayamaz.');
+    }
   }
 
   private async ensureSlugAvailable(slug: string) {
