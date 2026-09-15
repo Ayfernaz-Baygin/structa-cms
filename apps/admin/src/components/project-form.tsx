@@ -7,6 +7,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import type { Project, ProjectCategory, ProjectImage, ProjectStatus } from '@/lib/api';
 import { slugify } from '@/lib/slug';
 
+import { MediaPicker } from './media-picker';
+
 function toDateInputValue(value: string | null): string {
   if (!value) {
     return '';
@@ -348,16 +350,11 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
             </div>
 
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-              <label htmlFor="coverImage" className="mb-2 block text-sm font-medium text-zinc-300">
-                Cover Image URL
-              </label>
-              <input
-                id="coverImage"
-                type="text"
+              <MediaPicker
+                label="Kapak Görseli"
                 value={coverImage}
-                onChange={(event) => setCoverImage(event.target.value)}
-                placeholder="https://..."
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
+                onChange={setCoverImage}
+                accept="image"
               />
             </div>
           </div>
@@ -404,6 +401,12 @@ function ProjectGallery({ project }: { project: Project }) {
 
   async function handleAddImage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (imageUrl.trim().length === 0) {
+      setError('Görsel URL veya medya seçimi zorunludur.');
+      return;
+    }
+
     setAdding(true);
     setError('');
 
@@ -472,37 +475,33 @@ function ProjectGallery({ project }: { project: Project }) {
         </div>
       )}
 
-      <form onSubmit={handleAddImage} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_0.7fr_auto]">
-        <input
-          type="text"
-          value={imageUrl}
-          onChange={(event) => setImageUrl(event.target.value)}
-          placeholder="Görsel URL"
-          required
-          className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
-        />
-        <input
-          type="text"
-          value={altText}
-          onChange={(event) => setAltText(event.target.value)}
-          placeholder="Alt metin"
-          className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
-        />
-        <input
-          type="number"
-          step={1}
-          value={imageSortOrder}
-          onChange={(event) => setImageSortOrder(event.target.value)}
-          placeholder="Sıra"
-          className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
-        />
-        <button
-          type="submit"
-          disabled={adding}
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {adding ? 'Ekleniyor...' : '+ Ekle'}
-        </button>
+      <form onSubmit={handleAddImage} className="mt-4 space-y-3">
+        <MediaPicker label="Görsel" value={imageUrl} onChange={setImageUrl} accept="image" />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.5fr_0.7fr_auto]">
+          <input
+            type="text"
+            value={altText}
+            onChange={(event) => setAltText(event.target.value)}
+            placeholder="Alt metin"
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+          />
+          <input
+            type="number"
+            step={1}
+            value={imageSortOrder}
+            onChange={(event) => setImageSortOrder(event.target.value)}
+            placeholder="Sıra"
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+          />
+          <button
+            type="submit"
+            disabled={adding}
+            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {adding ? 'Ekleniyor...' : '+ Ekle'}
+          </button>
+        </div>
       </form>
 
       <div className="mt-5 divide-y divide-zinc-800/60">

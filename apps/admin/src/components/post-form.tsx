@@ -7,6 +7,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import type { Post, PostCategory, PostStatus } from '@/lib/api';
 import { slugify } from '@/lib/slug';
 
+import { MediaPicker } from './media-picker';
+
 interface PostFormProps {
   initialPost?: Post;
 }
@@ -284,16 +286,11 @@ export function PostForm({ initialPost }: PostFormProps) {
           )}
 
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <label htmlFor="coverImage" className="mb-2 block text-sm font-medium text-zinc-300">
-              Kapak Görseli URL
-            </label>
-            <input
-              id="coverImage"
-              type="text"
+            <MediaPicker
+              label="Kapak Görseli"
               value={coverImage}
-              onChange={(event) => setCoverImage(event.target.value)}
-              placeholder="https://..."
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
+              onChange={setCoverImage}
+              accept="image"
             />
           </div>
         </div>

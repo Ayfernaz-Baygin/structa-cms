@@ -2,9 +2,9 @@
 
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from 'react';
 
-import { getMediaUrl, type Media, type MediaPagination } from '@/lib/api';
-import { formatDate, formatFileSize } from '@/lib/format';
+import type { Media, MediaPagination } from '@/lib/api';
 
+import { MediaCard } from './media-card';
 import { MediaDetailModal } from './media-detail-modal';
 
 type FilterType = 'all' | 'image' | 'document';
@@ -324,51 +324,5 @@ export function MediaLibrary() {
         />
       )}
     </div>
-  );
-}
-
-function MediaCard({ media, onClick }: { media: Media; onClick: () => void }) {
-  const isImage = media.mimeType.startsWith('image/');
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 text-left transition hover:border-zinc-700"
-    >
-      <div className="flex aspect-square items-center justify-center bg-zinc-950">
-        {isImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={getMediaUrl(media)}
-            alt={media.altText ?? media.originalName}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            className="h-10 w-10 text-zinc-600"
-          >
-            <path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
-            <path d="M14 3v5h5" />
-          </svg>
-        )}
-      </div>
-
-      <div className="p-2.5">
-        <p className="truncate text-xs font-medium text-white" title={media.originalName}>
-          {media.originalName}
-        </p>
-        <p className="mt-1 truncate text-[11px] text-zinc-500">
-          {media.width && media.height ? `${media.width}×${media.height} · ` : ''}
-          {formatFileSize(media.size)}
-        </p>
-        <p className="mt-0.5 truncate text-[11px] text-zinc-600">{formatDate(media.createdAt)}</p>
-      </div>
-    </button>
   );
 }

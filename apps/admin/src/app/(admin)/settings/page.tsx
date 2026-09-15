@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 
 import type { SiteSettings } from '@/lib/api';
+import { MediaPicker } from '@/components/media-picker';
 
 type FormState = Record<
   | 'siteName'
@@ -208,19 +209,17 @@ export default function SettingsPage() {
               onChange={(v) => update('siteDescription', v)}
               textarea
             />
-            <Field
-              id="logoUrl"
-              label="Logo URL"
+            <MediaPicker
+              label="Logo"
               value={form.logoUrl}
               onChange={(v) => update('logoUrl', v)}
-              placeholder="https://..."
+              accept="image"
             />
-            <Field
-              id="faviconUrl"
-              label="Favicon URL"
+            <MediaPicker
+              label="Favicon"
               value={form.faviconUrl}
               onChange={(v) => update('faviconUrl', v)}
-              placeholder="https://..."
+              accept="image"
             />
           </Section>
 

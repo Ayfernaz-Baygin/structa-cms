@@ -163,6 +163,23 @@ export function getMediaUrl(media: Pick<Media, 'url'>): string {
   return `${API_URL}${media.url}`;
 }
 
+/**
+ * Image/document fields store a raw URL that can be absolute (external) or
+ * backend-relative (e.g. "/uploads/images/x.jpg") — this resolves either to
+ * something browsable for previews, without touching the stored value itself.
+ */
+export function resolveFieldImageUrl(url: string | null | undefined): string | null {
+  if (!url || url.trim().length === 0) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+
+  return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 export interface SiteSettings {
   id: string;
   siteName: string | null;
