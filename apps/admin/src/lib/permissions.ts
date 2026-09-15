@@ -17,6 +17,7 @@ interface RoutePermission {
  * Routes with no matching rule (e.g. /dashboard) are open to any logged-in user.
  */
 export const ROUTE_PERMISSIONS: RoutePermission[] = [
+  { prefix: '/audit-logs', roles: ADMIN_MANAGEMENT_ROLES },
   { prefix: '/pages', roles: CONTENT_ROLES },
   { prefix: '/services', roles: CONTENT_ROLES },
   { prefix: '/projects', roles: CONTENT_ROLES },

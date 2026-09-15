@@ -102,6 +102,7 @@ function UsersIcon({ className }: { className?: string }) {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { label: 'İşlem Geçmişi', href: '/audit-logs', enabled: true, icon: ListIcon },
   { label: 'Dashboard', href: '/dashboard', enabled: true, icon: GridIcon },
   { label: 'Sayfalar', href: '/pages', enabled: true, icon: DocumentIcon },
   { label: 'Hizmetler', href: '/services', enabled: true, icon: BriefcaseIcon },

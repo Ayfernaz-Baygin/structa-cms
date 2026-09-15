@@ -14,6 +14,31 @@ enum UserRole {
   AUTHOR
 }
 
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  PUBLISH
+  RESTORE
+  LOGIN
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     AuditAction
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([createdAt, id])
+  @@index([action, createdAt])
+  @@index([entityType, createdAt])
+  @@index([userId])
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -26,6 +51,7 @@ model User {
   posts Post[]
   media Media[]
   pageRevisions PageRevision[]
+  auditLogs     AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

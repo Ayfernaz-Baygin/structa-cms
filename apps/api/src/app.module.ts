@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuditModule } from './audit/audit.module.js';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -20,6 +21,7 @@ import { PublicModule } from './public/public.module.js';
       isGlobal: true,
     }),
     PrismaModule,
+    AuditModule,
     UsersModule,
     AuthModule,
     PagesModule,
