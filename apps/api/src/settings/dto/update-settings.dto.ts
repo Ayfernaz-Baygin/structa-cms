@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, IsUrl, Matches } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUrl, IsUUID, Matches, ValidateIf } from 'class-validator';
 
 // logoUrl/faviconUrl can be picked from the Media Library, which stores a
 // backend-relative path (e.g. "/uploads/images/x.jpg") rather than a full
@@ -68,4 +68,11 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
   googleAnalyticsId?: string;
+
+  // null clears the selection back to the built-in homepage fallback;
+  // omitting the key entirely (undefined) leaves it untouched.
+  @IsOptional()
+  @ValidateIf((_object, value) => value !== null)
+  @IsUUID()
+  homePageId?: string | null;
 }

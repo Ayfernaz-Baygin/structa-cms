@@ -44,7 +44,8 @@ model Page {
   seoTitle       String?
   seoDescription String?
 
-  sections PageSection[]
+  sections     PageSection[]
+  homePageFor  SiteSettings?
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -232,6 +233,11 @@ model SiteSettings {
   footerText        String?
   googleMapsUrl     String?
   googleAnalyticsId String?
+
+  // Optional CMS Page rendered at the public "/" route; onDelete: SetNull so
+  // deleting that Page just falls back to the built-in homepage, never breaks Settings.
+  homePageId String? @unique
+  homePage   Page?   @relation(fields: [homePageId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

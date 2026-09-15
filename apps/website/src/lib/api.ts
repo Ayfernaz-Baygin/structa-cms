@@ -20,6 +20,7 @@ export interface SiteSettings {
   footerText: string | null;
   googleMapsUrl: string | null;
   googleAnalyticsId: string | null;
+  homePage: { slug: string } | null;
 }
 
 export interface MenuItem {

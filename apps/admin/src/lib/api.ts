@@ -256,6 +256,7 @@ export interface SiteSettings {
   footerText: string | null;
   googleMapsUrl: string | null;
   googleAnalyticsId: string | null;
+  homePageId: string | null;
   createdAt: string;
   updatedAt: string;
 }

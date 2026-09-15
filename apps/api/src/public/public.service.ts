@@ -44,6 +44,9 @@ export class PublicService {
       where: { id: SETTINGS_ID },
       update: {},
       create: { id: SETTINGS_ID },
+      include: {
+        homePage: { select: { slug: true } },
+      },
     });
   }
 

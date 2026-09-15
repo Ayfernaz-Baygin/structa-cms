@@ -1,13 +1,46 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { CmsPageContent } from '@/components/cms-page-content';
 import { Container } from '@/components/container';
 import { PostCard } from '@/components/post-card';
 import { ProjectCard } from '@/components/project-card';
 import { SectionHeading } from '@/components/section-heading';
 import { ServiceCard } from '@/components/service-card';
-import { getPosts, getProjects, getServices, getSettings } from '@/lib/api';
+import { getPageBySlug, getPosts, getProjects, getServices, getSettings } from '@/lib/api';
+
+async function resolveHomePage() {
+  const settings = await getSettings();
+
+  if (!settings.homePage) {
+    return null;
+  }
+
+  // Falls back to the default homepage below when the selected Page is a
+  // draft or has been deleted (getPageBySlug only returns PUBLISHED pages).
+  return getPageBySlug(settings.homePage.slug);
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await resolveHomePage();
+
+  if (!page) {
+    return {};
+  }
+
+  return {
+    title: page.seoTitle ?? page.title,
+    description: page.seoDescription ?? undefined,
+  };
+}
 
 export default async function HomePage() {
+  const homePage = await resolveHomePage();
+
+  if (homePage) {
+    return <CmsPageContent page={homePage} />;
+  }
+
   const [settings, services, projects, posts] = await Promise.all([
     getSettings(),
     getServices(6),

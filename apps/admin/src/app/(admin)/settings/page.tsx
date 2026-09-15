@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 
-import type { SiteSettings } from '@/lib/api';
+import type { Page, SiteSettings } from '@/lib/api';
 import { MediaPicker } from '@/components/media-picker';
 
 type FormState = Record<
@@ -118,13 +118,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function SettingsPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [homePageId, setHomePageId] = useState('');
+  const [pages, setPages] = useState<Page[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const publishedPages = pages?.filter((page) => page.status === 'PUBLISHED') ?? [];
+
   useEffect(() => {
     void loadSettings();
+    void loadPages();
   }, []);
 
   async function loadSettings() {
@@ -140,10 +145,21 @@ export default function SettingsPage() {
       }
 
       setForm(toFormState(data));
+      setHomePageId((data as SiteSettings).homePageId ?? '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ayarlar yüklenemedi.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadPages() {
+    try {
+      const response = await fetch('/api/pages', { cache: 'no-store' });
+      const data = await response.json();
+      setPages(response.ok ? data : []);
+    } catch {
+      setPages([]);
     }
   }
 
@@ -158,12 +174,15 @@ export default function SettingsPage() {
     setError('');
     setSuccess(false);
 
-    const payload = Object.fromEntries(
-      Object.entries(form).map(([key, value]) => [
-        key,
-        value.trim().length > 0 ? value.trim() : undefined,
-      ]),
-    );
+    const payload = {
+      ...Object.fromEntries(
+        Object.entries(form).map(([key, value]) => [
+          key,
+          value.trim().length > 0 ? value.trim() : undefined,
+        ]),
+      ),
+      homePageId: homePageId.length > 0 ? homePageId : null,
+    };
 
     try {
       const response = await fetch('/api/settings', {
@@ -180,6 +199,7 @@ export default function SettingsPage() {
       }
 
       setForm(toFormState(data));
+      setHomePageId((data as SiteSettings).homePageId ?? '');
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ayarlar kaydedilemedi.');
@@ -221,6 +241,41 @@ export default function SettingsPage() {
               onChange={(v) => update('faviconUrl', v)}
               accept="image"
             />
+          </Section>
+
+          <Section title="Ana Sayfa">
+            <div className="sm:col-span-2">
+              <label htmlFor="homePageId" className="mb-2 block text-sm font-medium text-zinc-300">
+                Ana Sayfa Olarak Kullanılacak Sayfa
+              </label>
+              <select
+                id="homePageId"
+                value={homePageId}
+                onChange={(event) => {
+                  setHomePageId(event.target.value);
+                  setSuccess(false);
+                }}
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
+              >
+                <option value="">Sabit Ana Sayfa (Varsayılan)</option>
+                {publishedPages.map((page) => (
+                  <option key={page.id} value={page.id}>
+                    {page.title}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-zinc-500">
+                Seçilen sayfa Page Builder bölümlerine sahipse, site ana sayfasında (/) o sayfa gösterilir.
+                Yalnızca yayında (PUBLISHED) sayfalar seçilebilir. Sayfa silinir veya taslağa alınırsa mevcut
+                sabit ana sayfa otomatik olarak devreye girer.
+              </p>
+              {pages !== null && publishedPages.length === 0 && (
+                <p className="mt-2 text-xs text-zinc-500">
+                  Yayında bir sayfa yok. Ana sayfa olarak seçebilmek için önce Sayfalar ekranından bir sayfayı
+                  yayınlayın.
+                </p>
+              )}
+            </div>
           </Section>
 
           <Section title="İletişim">
