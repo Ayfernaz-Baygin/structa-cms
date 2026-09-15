@@ -23,6 +23,8 @@ model User {
   role         UserRole @default(AUTHOR)
   isActive     Boolean  @default(true)
 
+  posts Post[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -120,4 +122,45 @@ model ProjectImage {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+}
+
+// Shared by Post (and any future content type) — new table, so introducing this
+// costs nothing; existing PageStatus/ServiceStatus/ProjectStatus columns are left
+// untouched since renaming an in-use enum forces a destructive column rewrite.
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model PostCategory {
+  id   String @id @default(uuid())
+  name String
+  slug String @unique
+
+  posts Post[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id             String        @id @default(uuid())
+  title          String
+  slug           String        @unique
+  excerpt        String?
+  content        String?
+  coverImage     String?
+  status         ContentStatus @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?
+
+  categoryId String?
+  category   PostCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
 }

@@ -94,7 +94,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Sayfalar', href: '/pages', enabled: true, icon: DocumentIcon },
   { label: 'Hizmetler', href: '/services', enabled: true, icon: BriefcaseIcon },
   { label: 'Projeler', href: '/projects', enabled: true, icon: FolderIcon },
-  { label: 'Blog', href: '/blog', enabled: false, icon: PencilIcon },
+  { label: 'Blog', href: '/blog', enabled: true, icon: PencilIcon },
   { label: 'Medya', href: '/media', enabled: false, icon: ImageIcon },
   { label: 'Menüler', href: '/menus', enabled: false, icon: ListIcon },
   { label: 'Ayarlar', href: '/settings', enabled: false, icon: GearIcon },

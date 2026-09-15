@@ -2,11 +2,26 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 
-import type { ProjectCategory } from '@/lib/api';
 import { slugify } from '@/lib/slug';
 
-export function CategoryManager() {
-  const [categories, setCategories] = useState<ProjectCategory[] | null>(null);
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface CategoryManagerProps {
+  endpoint?: string;
+  title?: string;
+  description?: string;
+}
+
+export function CategoryManager({
+  endpoint = '/api/project-categories',
+  title = 'Kategoriler',
+  description = 'Proje kategorilerini yönetin.',
+}: CategoryManagerProps) {
+  const [categories, setCategories] = useState<Category[] | null>(null);
   const [error, setError] = useState('');
 
   const [name, setName] = useState('');
@@ -30,7 +45,7 @@ export function CategoryManager() {
     setError('');
 
     try {
-      const response = await fetch('/api/project-categories', { cache: 'no-store' });
+      const response = await fetch(endpoint, { cache: 'no-store' });
       const data = await response.json();
 
       if (!response.ok) {
@@ -58,7 +73,7 @@ export function CategoryManager() {
     setError('');
 
     try {
-      const response = await fetch('/api/project-categories', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug }),
@@ -85,7 +100,7 @@ export function CategoryManager() {
     }
   }
 
-  function startEdit(category: ProjectCategory) {
+  function startEdit(category: Category) {
     setEditingId(category.id);
     setEditName(category.name);
     setEditSlug(category.slug);
@@ -96,7 +111,7 @@ export function CategoryManager() {
     setError('');
 
     try {
-      const response = await fetch(`/api/project-categories/${id}`, {
+      const response = await fetch(`${endpoint}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editName, slug: editSlug }),
@@ -126,7 +141,7 @@ export function CategoryManager() {
     setError('');
 
     try {
-      const response = await fetch(`/api/project-categories/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${endpoint}/${id}`, { method: 'DELETE' });
 
       if (!response.ok && response.status !== 204) {
         const data = await response.json().catch(() => null);
@@ -144,8 +159,8 @@ export function CategoryManager() {
 
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-      <h2 className="text-sm font-semibold text-white">Kategoriler</h2>
-      <p className="mt-1 text-xs text-zinc-500">Proje kategorilerini yönetin.</p>
+      <h2 className="text-sm font-semibold text-white">{title}</h2>
+      <p className="mt-1 text-xs text-zinc-500">{description}</p>
 
       {error && (
         <div className="mt-3 rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300">

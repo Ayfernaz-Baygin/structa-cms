@@ -84,3 +84,39 @@ export interface Project {
   updatedAt: string;
   publishedAt: string | null;
 }
+
+export interface PostCategory {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PostAuthor {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+export type PostStatus = 'DRAFT' | 'PUBLISHED';
+
+export interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string | null;
+  coverImage: string | null;
+  status: PostStatus;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  categoryId: string | null;
+  category: PostCategory | null;
+  authorId: string;
+  author: PostAuthor;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+}
