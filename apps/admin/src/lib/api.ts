@@ -43,3 +43,44 @@ export interface Service {
   updatedAt: string;
   publishedAt: string | null;
 }
+
+export interface ProjectCategory {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectImage {
+  id: string;
+  projectId: string;
+  imageUrl: string;
+  altText: string | null;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export type ProjectStatus = 'DRAFT' | 'PUBLISHED';
+
+export interface Project {
+  id: string;
+  title: string;
+  slug: string;
+  shortDescription: string | null;
+  description: string | null;
+  clientName: string | null;
+  location: string | null;
+  projectDate: string | null;
+  coverImage: string | null;
+  status: ProjectStatus;
+  sortOrder: number;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  categoryId: string | null;
+  category: ProjectCategory | null;
+  images: ProjectImage[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+}

@@ -68,3 +68,56 @@ model Service {
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
 }
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model ProjectCategory {
+  id   String @id @default(uuid())
+  name String
+  slug String @unique
+
+  projects Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id               String        @id @default(uuid())
+  title            String
+  slug             String        @unique
+  shortDescription String?
+  description      String?
+  clientName       String?
+  location         String?
+  projectDate      DateTime?
+  coverImage       String?
+  status           ProjectStatus @default(DRAFT)
+  sortOrder        Int           @default(0)
+  seoTitle         String?
+  seoDescription   String?
+
+  categoryId String?
+  category   ProjectCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  images ProjectImage[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+}
+
+model ProjectImage {
+  id        String  @id @default(uuid())
+  imageUrl  String
+  altText   String?
+  sortOrder Int     @default(0)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
