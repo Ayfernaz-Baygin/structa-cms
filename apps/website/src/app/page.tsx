@@ -1,69 +1,119 @@
-import Image from "next/image";
+import Link from 'next/link';
 
-export default function Home() {
+import { Container } from '@/components/container';
+import { PostCard } from '@/components/post-card';
+import { ProjectCard } from '@/components/project-card';
+import { SectionHeading } from '@/components/section-heading';
+import { ServiceCard } from '@/components/service-card';
+import { getPosts, getProjects, getServices, getSettings } from '@/lib/api';
+
+export default async function HomePage() {
+  const [settings, services, projects, posts] = await Promise.all([
+    getSettings(),
+    getServices(6),
+    getProjects(6),
+    getPosts(3),
+  ]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <section className="border-b border-border bg-surface">
+        <Container className="flex flex-col items-start gap-6 py-24 sm:py-32">
+          <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+            {settings.siteName ?? 'Structa'}
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          <h1 className="max-w-3xl font-(family-name:--font-display) text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
+            {settings.siteDescription ?? 'Mekanları anlamlı, kalıcı tasarımlara dönüştürüyoruz.'}
+          </h1>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Link
+              href="/projects"
+              className="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
+            >
+              Projelerimizi İnceleyin
+            </Link>
+            <Link
+              href="/services"
+              className="rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-black/[.03]"
+            >
+              Hizmetlerimiz
+            </Link>
+          </div>
+        </Container>
+      </section>
+
+      {services.length > 0 && (
+        <section className="py-20 sm:py-28">
+          <Container>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <SectionHeading eyebrow="Neler Yapıyoruz" title="Hizmetlerimiz" />
+              <Link href="/services" className="text-sm font-semibold text-accent hover:underline">
+                Tümünü Gör →
+              </Link>
+            </div>
+            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {services.map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {projects.length > 0 && (
+        <section className="bg-surface py-20 sm:py-28">
+          <Container>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <SectionHeading eyebrow="Portföy" title="Seçili Projeler" />
+              <Link href="/projects" className="text-sm font-semibold text-accent hover:underline">
+                Tümünü Gör →
+              </Link>
+            </div>
+            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {projects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
+
+      <section className="py-20 sm:py-28">
+        <Container className="flex flex-col items-center gap-6 rounded-3xl border border-border bg-stone-900 px-6 py-16 text-center text-white sm:px-16">
+          <h2 className="font-(family-name:--font-display) text-3xl font-semibold tracking-tight sm:text-4xl">
+            {settings.siteName ?? 'Structa'} ile projenizi hayata geçirelim.
+          </h2>
+          {settings.siteDescription && (
+            <p className="max-w-xl text-base leading-relaxed text-white/70">{settings.siteDescription}</p>
+          )}
+          {settings.email && (
+            <a
+              href={`mailto:${settings.email}`}
+              className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-stone-900 transition hover:opacity-90"
+            >
+              Bize Ulaşın
+            </a>
+          )}
+        </Container>
+      </section>
+
+      {posts.length > 0 && (
+        <section className="bg-surface py-20 sm:py-28">
+          <Container>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <SectionHeading eyebrow="Güncel" title="Blogdan Son Yazılar" />
+              <Link href="/blog" className="text-sm font-semibold text-accent hover:underline">
+                Tümünü Gör →
+              </Link>
+            </div>
+            <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
+    </>
   );
 }

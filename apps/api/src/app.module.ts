@@ -12,6 +12,7 @@ import { PostsModule } from './posts/posts.module.js';
 import { MediaModule } from './media/media.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { MenusModule } from './menus/menus.module.js';
+import { PublicModule } from './public/public.module.js';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { MenusModule } from './menus/menus.module.js';
     MediaModule,
     SettingsModule,
     MenusModule,
+    PublicModule,
   ],
   controllers: [AppController],
   providers: [AppService],
