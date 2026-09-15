@@ -9,3 +9,18 @@ export interface AuthUser {
   lastName: string | null;
   role: string;
 }
+
+export type PageStatus = 'DRAFT' | 'PUBLISHED';
+
+export interface Page {
+  id: string;
+  title: string;
+  slug: string;
+  body: string | null;
+  status: PageStatus;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+}

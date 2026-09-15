@@ -26,3 +26,22 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Page {
+  id             String     @id @default(uuid())
+  title          String
+  slug           String     @unique
+  body           String?
+  status         PageStatus @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+}
