@@ -4,24 +4,30 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 
-import type { Page, PageStatus } from '@/lib/api';
+import type { Service, ServiceStatus } from '@/lib/api';
 import { slugify } from '@/lib/slug';
 
-interface PageFormProps {
-  initialPage?: Page;
+interface ServiceFormProps {
+  initialService?: Service;
 }
 
-export function PageForm({ initialPage }: PageFormProps) {
+export function ServiceForm({ initialService }: ServiceFormProps) {
   const router = useRouter();
-  const isEdit = Boolean(initialPage);
+  const isEdit = Boolean(initialService);
 
-  const [title, setTitle] = useState(initialPage?.title ?? '');
-  const [slug, setSlug] = useState(initialPage?.slug ?? '');
+  const [title, setTitle] = useState(initialService?.title ?? '');
+  const [slug, setSlug] = useState(initialService?.slug ?? '');
   const [slugTouched, setSlugTouched] = useState(isEdit);
-  const [body, setBody] = useState(initialPage?.body ?? '');
-  const [status, setStatus] = useState<PageStatus>(initialPage?.status ?? 'DRAFT');
-  const [seoTitle, setSeoTitle] = useState(initialPage?.seoTitle ?? '');
-  const [seoDescription, setSeoDescription] = useState(initialPage?.seoDescription ?? '');
+  const [shortDescription, setShortDescription] = useState(
+    initialService?.shortDescription ?? '',
+  );
+  const [description, setDescription] = useState(initialService?.description ?? '');
+  const [icon, setIcon] = useState(initialService?.icon ?? '');
+  const [coverImage, setCoverImage] = useState(initialService?.coverImage ?? '');
+  const [sortOrder, setSortOrder] = useState(String(initialService?.sortOrder ?? 0));
+  const [status, setStatus] = useState<ServiceStatus>(initialService?.status ?? 'DRAFT');
+  const [seoTitle, setSeoTitle] = useState(initialService?.seoTitle ?? '');
+  const [seoDescription, setSeoDescription] = useState(initialService?.seoDescription ?? '');
 
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -49,18 +55,24 @@ export function PageForm({ initialPage }: PageFormProps) {
     setSaving(true);
     setError('');
 
+    const parsedSortOrder = Number.parseInt(sortOrder, 10);
+
     const payload = {
       title,
       slug,
-      body: body.trim().length > 0 ? body : undefined,
+      shortDescription: shortDescription.trim().length > 0 ? shortDescription : undefined,
+      description: description.trim().length > 0 ? description : undefined,
+      icon: icon.trim().length > 0 ? icon : undefined,
+      coverImage: coverImage.trim().length > 0 ? coverImage : undefined,
       status,
+      sortOrder: Number.isNaN(parsedSortOrder) ? 0 : parsedSortOrder,
       seoTitle: seoTitle.trim().length > 0 ? seoTitle : undefined,
       seoDescription: seoDescription.trim().length > 0 ? seoDescription : undefined,
     };
 
     try {
       const response = await fetch(
-        isEdit ? `/api/pages/${initialPage!.id}` : '/api/pages',
+        isEdit ? `/api/services/${initialService!.id}` : '/api/services',
         {
           method: isEdit ? 'PATCH' : 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -79,12 +91,12 @@ export function PageForm({ initialPage }: PageFormProps) {
             : data.message;
           setError(message ?? 'Girdiğiniz bilgiler geçersiz.');
         } else {
-          setError(data?.message ?? 'Sayfa kaydedilemedi.');
+          setError(data?.message ?? 'Hizmet kaydedilemedi.');
         }
         return;
       }
 
-      router.push('/pages');
+      router.push('/services');
       router.refresh();
     } catch {
       setError('Sunucuya bağlanılamadı.');
@@ -138,14 +150,30 @@ export function PageForm({ initialPage }: PageFormProps) {
             </div>
 
             <div className="mt-5">
-              <label htmlFor="body" className="mb-2 block text-sm font-medium text-zinc-300">
-                İçerik
+              <label
+                htmlFor="shortDescription"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
+                Kısa Açıklama
               </label>
               <textarea
-                id="body"
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                rows={14}
+                id="shortDescription"
+                value={shortDescription}
+                onChange={(event) => setShortDescription(event.target.value)}
+                rows={2}
+                className="w-full resize-y rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="mt-5">
+              <label htmlFor="description" className="mb-2 block text-sm font-medium text-zinc-300">
+                Açıklama
+              </label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                rows={10}
                 className="w-full resize-y rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
               />
             </div>
@@ -193,12 +221,57 @@ export function PageForm({ initialPage }: PageFormProps) {
             <select
               id="status"
               value={status}
-              onChange={(event) => setStatus(event.target.value as PageStatus)}
+              onChange={(event) => setStatus(event.target.value as ServiceStatus)}
               className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
             >
               <option value="DRAFT">Taslak</option>
               <option value="PUBLISHED">Yayında</option>
             </select>
+
+            <div className="mt-5">
+              <label htmlFor="sortOrder" className="mb-2 block text-sm font-medium text-zinc-300">
+                Sıralama
+              </label>
+              <input
+                id="sortOrder"
+                type="number"
+                step={1}
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value)}
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <label htmlFor="icon" className="mb-2 block text-sm font-medium text-zinc-300">
+              İkon
+            </label>
+            <input
+              id="icon"
+              type="text"
+              value={icon}
+              onChange={(event) => setIcon(event.target.value)}
+              placeholder="ör. briefcase"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
+            />
+
+            <div className="mt-5">
+              <label
+                htmlFor="coverImage"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
+                Kapak Görseli URL
+              </label>
+              <input
+                id="coverImage"
+                type="text"
+                value={coverImage}
+                onChange={(event) => setCoverImage(event.target.value)}
+                placeholder="https://..."
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -215,11 +288,11 @@ export function PageForm({ initialPage }: PageFormProps) {
           disabled={saving}
           className="rounded-xl bg-indigo-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? 'Kaydediliyor...' : isEdit ? 'Değişiklikleri Kaydet' : 'Sayfayı Oluştur'}
+          {saving ? 'Kaydediliyor...' : isEdit ? 'Değişiklikleri Kaydet' : 'Hizmeti Oluştur'}
         </button>
 
         <Link
-          href="/pages"
+          href="/services"
           className="rounded-xl border border-zinc-800 px-5 py-3 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:bg-zinc-900 hover:text-white"
         >
           İptal

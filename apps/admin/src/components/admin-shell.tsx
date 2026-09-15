@@ -92,7 +92,7 @@ function GearIcon({ className }: { className?: string }) {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', enabled: true, icon: GridIcon },
   { label: 'Sayfalar', href: '/pages', enabled: true, icon: DocumentIcon },
-  { label: 'Hizmetler', href: '/services', enabled: false, icon: BriefcaseIcon },
+  { label: 'Hizmetler', href: '/services', enabled: true, icon: BriefcaseIcon },
   { label: 'Projeler', href: '/projects', enabled: false, icon: FolderIcon },
   { label: 'Blog', href: '/blog', enabled: false, icon: PencilIcon },
   { label: 'Medya', href: '/media', enabled: false, icon: ImageIcon },

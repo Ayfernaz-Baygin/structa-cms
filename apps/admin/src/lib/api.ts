@@ -24,3 +24,22 @@ export interface Page {
   updatedAt: string;
   publishedAt: string | null;
 }
+
+export type ServiceStatus = 'DRAFT' | 'PUBLISHED';
+
+export interface Service {
+  id: string;
+  title: string;
+  slug: string;
+  shortDescription: string | null;
+  description: string | null;
+  icon: string | null;
+  coverImage: string | null;
+  status: ServiceStatus;
+  sortOrder: number;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+}
