@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { Container } from '@/components/container';
 import { RichText } from '@/components/rich-text';
+import { SectionRenderer } from '@/components/section-renderer';
 import { getPageBySlug } from '@/lib/api';
 
 interface PageProps {
@@ -29,6 +30,14 @@ export default async function CmsPage({ params }: PageProps) {
 
   if (!page) {
     notFound();
+  }
+
+  if (page.sections.length > 0) {
+    return (
+      <article>
+        <SectionRenderer sections={page.sections} />
+      </article>
+    );
   }
 
   return (

@@ -7,6 +7,8 @@ import { FormEvent, useState } from 'react';
 import type { Page, PageStatus } from '@/lib/api';
 import { slugify } from '@/lib/slug';
 
+import { PageSectionBuilder } from './page-section-builder';
+
 interface PageFormProps {
   initialPage?: Page;
 }
@@ -94,7 +96,8 @@ export function PageForm({ initialPage }: PageFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
@@ -225,6 +228,9 @@ export function PageForm({ initialPage }: PageFormProps) {
           İptal
         </Link>
       </div>
-    </form>
+      </form>
+
+      {isEdit && initialPage && <PageSectionBuilder page={initialPage} />}
+    </div>
   );
 }

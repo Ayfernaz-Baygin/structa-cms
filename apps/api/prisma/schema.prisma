@@ -44,9 +44,34 @@ model Page {
   seoTitle       String?
   seoDescription String?
 
+  sections PageSection[]
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
+}
+
+enum SectionType {
+  HERO
+  TEXT
+  IMAGE_TEXT
+  SERVICES
+  PROJECTS
+  POSTS
+  CTA
+}
+
+model PageSection {
+  id        String      @id @default(uuid())
+  type      SectionType
+  sortOrder Int         @default(0)
+  data      Json
+
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum ServiceStatus {

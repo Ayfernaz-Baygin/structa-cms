@@ -74,6 +74,9 @@ export class PublicService {
   async getPageBySlug(slug: string) {
     const page = await this.prisma.page.findFirst({
       where: { slug, status: PageStatus.PUBLISHED },
+      include: {
+        sections: { orderBy: { sortOrder: 'asc' } },
+      },
     });
 
     if (!page) {

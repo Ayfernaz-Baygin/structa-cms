@@ -25,6 +25,65 @@ export interface Page {
   publishedAt: string | null;
 }
 
+export type SectionType =
+  | 'HERO'
+  | 'TEXT'
+  | 'IMAGE_TEXT'
+  | 'SERVICES'
+  | 'PROJECTS'
+  | 'POSTS'
+  | 'CTA';
+
+export interface HeroSectionData {
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+}
+
+export interface TextSectionData {
+  title?: string;
+  body: string;
+}
+
+export interface ImageTextSectionData {
+  title?: string;
+  body: string;
+  imageUrl: string;
+  imagePosition?: 'left' | 'right';
+}
+
+export interface ListSectionData {
+  title?: string;
+  limit?: number;
+}
+
+export interface CtaSectionData {
+  title: string;
+  description?: string;
+  buttonLabel: string;
+  buttonUrl: string;
+  imageUrl?: string;
+}
+
+export type SectionData =
+  | HeroSectionData
+  | TextSectionData
+  | ImageTextSectionData
+  | ListSectionData
+  | CtaSectionData;
+
+export interface PageSection {
+  id: string;
+  pageId: string;
+  type: SectionType;
+  sortOrder: number;
+  data: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type ServiceStatus = 'DRAFT' | 'PUBLISHED';
 
 export interface Service {
