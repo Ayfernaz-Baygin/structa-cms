@@ -8,7 +8,6 @@ export type MenuLocation = "HEADER" | "FOOTER";
 export type MenuItemTarget = "SELF" | "BLANK";
 
 export interface SiteSettings {
-  id: string;
   siteName: string | null;
   siteDescription: string | null;
   logoUrl: string | null;
