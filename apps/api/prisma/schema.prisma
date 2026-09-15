@@ -25,6 +25,7 @@ model User {
 
   posts Post[]
   media Media[]
+  pageRevisions PageRevision[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -45,11 +46,37 @@ model Page {
   seoDescription String?
 
   sections     PageSection[]
+  revisions    PageRevision[]
   homePageFor  SiteSettings?
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
+}
+
+// Snapshot of a Page (including its sections) taken right before an update
+// or a restore, so every past state — including the one just replaced by a
+// restore — stays recoverable. createdBy is SetNull (not Cascade) so the
+// audit trail survives even if the acting user's account is later removed.
+model PageRevision {
+  id             String     @id @default(uuid())
+  title          String
+  slug           String
+  body           String?
+  status         PageStatus
+  seoTitle       String?
+  seoDescription String?
+  sections       Json?
+
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([pageId])
 }
 
 enum SectionType {

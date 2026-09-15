@@ -97,6 +97,35 @@ export interface PageSection {
   updatedAt: string;
 }
 
+export interface PageRevisionAuthor {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+export interface PageRevisionSummary {
+  id: string;
+  title: string;
+  slug: string;
+  status: PageStatus;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  createdAt: string;
+  createdBy: PageRevisionAuthor | null;
+}
+
+export interface PageRevisionSectionSnapshot {
+  type: SectionType;
+  sortOrder: number;
+  data: Record<string, unknown>;
+}
+
+export interface PageRevisionDetail extends PageRevisionSummary {
+  body: string | null;
+  sections: PageRevisionSectionSnapshot[] | null;
+}
+
 export type ServiceStatus = 'DRAFT' | 'PUBLISHED';
 
 export interface Service {

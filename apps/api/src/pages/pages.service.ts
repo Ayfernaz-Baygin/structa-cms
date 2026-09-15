@@ -1,7 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import type { CurrentUserPayload } from '../auth/current-user.decorator.js';
 import type { Prisma } from '../generated/prisma/client.js';
-import { PageStatus } from '../generated/prisma/enums.js';
+import { PageStatus, SectionType } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreatePageSectionDto } from './dto/create-page-section.dto.js';
 import { CreatePageDto } from './dto/create-page.dto.js';
@@ -9,6 +10,19 @@ import { ReorderPageSectionsDto } from './dto/reorder-page-sections.dto.js';
 import { UpdatePageSectionDto } from './dto/update-page-section.dto.js';
 import { UpdatePageDto } from './dto/update-page.dto.js';
 import { validateSectionData } from './page-section-data.validator.js';
+
+const REVISION_CREATED_BY_SELECT = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+} as const;
+
+interface RevisionSectionSnapshot {
+  type: SectionType;
+  sortOrder: number;
+  data: Prisma.InputJsonValue;
+}
 
 @Injectable()
 export class PagesService {
@@ -50,7 +64,7 @@ export class PagesService {
     });
   }
 
-  async update(id: string, dto: UpdatePageDto) {
+  async update(id: string, dto: UpdatePageDto, currentUser: CurrentUserPayload) {
     const existing = await this.findOne(id);
 
     if (dto.slug && dto.slug !== existing.slug) {
@@ -63,17 +77,22 @@ export class PagesService {
         ? new Date()
         : existing.publishedAt;
 
-    return this.prisma.page.update({
-      where: { id },
-      data: {
-        title: dto.title,
-        slug: dto.slug,
-        body: dto.body,
-        status: dto.status,
-        seoTitle: dto.seoTitle,
-        seoDescription: dto.seoDescription,
-        publishedAt,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // Snapshot the pre-update state (page + current sections) before mutating it.
+      await this.snapshotRevision(tx, existing, currentUser.sub);
+
+      return tx.page.update({
+        where: { id },
+        data: {
+          title: dto.title,
+          slug: dto.slug,
+          body: dto.body,
+          status: dto.status,
+          seoTitle: dto.seoTitle,
+          seoDescription: dto.seoDescription,
+          publishedAt,
+        },
+      });
     });
   }
 
@@ -180,5 +199,130 @@ export class PagesService {
     }
 
     return section;
+  }
+
+  async findRevisions(pageId: string) {
+    await this.findOne(pageId);
+
+    return this.prisma.pageRevision.findMany({
+      where: { pageId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        seoTitle: true,
+        seoDescription: true,
+        createdAt: true,
+        createdBy: { select: REVISION_CREATED_BY_SELECT },
+      },
+    });
+  }
+
+  async findRevision(pageId: string, revisionId: string) {
+    await this.findOne(pageId);
+
+    return this.findRevisionOrThrow(pageId, revisionId);
+  }
+
+  async restoreRevision(pageId: string, revisionId: string, currentUser: CurrentUserPayload) {
+    const existing = await this.findOne(pageId);
+    const revision = await this.findRevisionOrThrow(pageId, revisionId);
+
+    if (revision.slug !== existing.slug) {
+      await this.ensureSlugAvailable(revision.slug);
+    }
+
+    const publishedAt =
+      revision.status === PageStatus.PUBLISHED && !existing.publishedAt
+        ? new Date()
+        : existing.publishedAt;
+
+    return this.prisma.$transaction(async (tx) => {
+      // The state we're about to overwrite is itself saved first, so a
+      // restore is never a one-way trip.
+      await this.snapshotRevision(tx, existing, currentUser.sub);
+
+      await tx.page.update({
+        where: { id: pageId },
+        data: {
+          title: revision.title,
+          slug: revision.slug,
+          body: revision.body,
+          status: revision.status,
+          seoTitle: revision.seoTitle,
+          seoDescription: revision.seoDescription,
+          publishedAt,
+        },
+      });
+
+      await tx.pageSection.deleteMany({ where: { pageId } });
+
+      const sectionsSnapshot = (revision.sections as unknown as RevisionSectionSnapshot[] | null) ?? [];
+
+      if (sectionsSnapshot.length > 0) {
+        await tx.pageSection.createMany({
+          data: sectionsSnapshot.map((section) => ({
+            pageId,
+            type: section.type,
+            sortOrder: section.sortOrder,
+            data: section.data,
+          })),
+        });
+      }
+
+      return tx.page.findUnique({
+        where: { id: pageId },
+        include: { sections: { orderBy: { sortOrder: 'asc' } } },
+      });
+    });
+  }
+
+  private async snapshotRevision(
+    tx: Prisma.TransactionClient,
+    page: {
+      id: string;
+      title: string;
+      slug: string;
+      body: string | null;
+      status: PageStatus;
+      seoTitle: string | null;
+      seoDescription: string | null;
+    },
+    createdById: string,
+  ) {
+    const sections = await tx.pageSection.findMany({
+      where: { pageId: page.id },
+      orderBy: { sortOrder: 'asc' },
+      select: { type: true, sortOrder: true, data: true },
+    });
+
+    await tx.pageRevision.create({
+      data: {
+        pageId: page.id,
+        title: page.title,
+        slug: page.slug,
+        body: page.body,
+        status: page.status,
+        seoTitle: page.seoTitle,
+        seoDescription: page.seoDescription,
+        sections: sections as unknown as Prisma.InputJsonValue,
+        createdById,
+      },
+    });
+  }
+
+  private async findRevisionOrThrow(pageId: string, revisionId: string) {
+    const revision = await this.prisma.pageRevision.findUnique({
+      where: { id: revisionId },
+      include: { createdBy: { select: REVISION_CREATED_BY_SELECT } },
+    });
+
+    if (!revision || revision.pageId !== pageId) {
+      throw new NotFoundException('Sürüm bulunamadı.');
+    }
+
+    return revision;
   }
 }

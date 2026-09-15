@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { CurrentUser, type CurrentUserPayload } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
 import { RolesGuard } from '../auth/roles.guard.js';
@@ -43,8 +44,12 @@ export class PagesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdatePageDto) {
-    return this.pagesService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdatePageDto,
+    @CurrentUser() currentUser: CurrentUserPayload,
+  ) {
+    return this.pagesService.update(id, dto, currentUser);
   }
 
   @Delete(':id')
@@ -80,5 +85,24 @@ export class PagesController {
   @Delete(':pageId/sections/:sectionId')
   removeSection(@Param('pageId') pageId: string, @Param('sectionId') sectionId: string) {
     return this.pagesService.removeSection(pageId, sectionId);
+  }
+
+  @Get(':id/revisions')
+  findRevisions(@Param('id') id: string) {
+    return this.pagesService.findRevisions(id);
+  }
+
+  @Get(':id/revisions/:revisionId')
+  findRevision(@Param('id') id: string, @Param('revisionId') revisionId: string) {
+    return this.pagesService.findRevision(id, revisionId);
+  }
+
+  @Post(':id/revisions/:revisionId/restore')
+  restoreRevision(
+    @Param('id') id: string,
+    @Param('revisionId') revisionId: string,
+    @CurrentUser() currentUser: CurrentUserPayload,
+  ) {
+    return this.pagesService.restoreRevision(id, revisionId, currentUser);
   }
 }

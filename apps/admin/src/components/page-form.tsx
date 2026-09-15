@@ -7,6 +7,7 @@ import { FormEvent, useState } from 'react';
 import type { Page, PageStatus } from '@/lib/api';
 import { slugify } from '@/lib/slug';
 
+import { PageRevisionHistory } from './page-revision-history';
 import { PageSectionBuilder } from './page-section-builder';
 
 interface PageFormProps {
@@ -231,6 +232,7 @@ export function PageForm({ initialPage }: PageFormProps) {
       </form>
 
       {isEdit && initialPage && <PageSectionBuilder page={initialPage} />}
+      {isEdit && initialPage && <PageRevisionHistory page={initialPage} />}
     </div>
   );
 }
