@@ -1,8 +1,8 @@
-import Image from 'next/image';
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "@/components/locale-link";
 
-import type { Service } from '@/lib/api';
-import { resolveMediaUrl } from '@/lib/media';
+import type { Service } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/media";
 
 export function ServiceCard({ service }: { service: Service }) {
   const coverUrl = resolveMediaUrl(service.coverImage);
@@ -31,9 +31,13 @@ export function ServiceCard({ service }: { service: Service }) {
           {service.title}
         </h3>
         {service.shortDescription && (
-          <p className="line-clamp-2 text-sm leading-relaxed text-muted">{service.shortDescription}</p>
+          <p className="line-clamp-2 text-sm leading-relaxed text-muted">
+            {service.shortDescription}
+          </p>
         )}
-        <span className="mt-auto pt-2 text-sm font-medium text-accent">Detayları Gör →</span>
+        <span className="mt-auto pt-2 text-sm font-medium text-accent">
+          Detayları Gör →
+        </span>
       </div>
     </Link>
   );

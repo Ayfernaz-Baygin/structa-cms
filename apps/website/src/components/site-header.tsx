@@ -1,15 +1,21 @@
-import Link from 'next/link';
-import Image from 'next/image';
+import Link from "@/components/locale-link";
+import Image from "next/image";
 
-import type { Menu, SiteSettings } from '@/lib/api';
-import { resolveMediaUrl } from '@/lib/media';
+import type { Menu, SiteSettings } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/media";
 
-import { MobileNav } from './mobile-nav';
+import { MobileNav } from "./mobile-nav";
 
-export function SiteHeader({ settings, menu }: { settings: SiteSettings; menu: Menu | null }) {
+export function SiteHeader({
+  settings,
+  menu,
+}: {
+  settings: SiteSettings;
+  menu: Menu | null;
+}) {
   const items = menu?.items ?? [];
   const logoUrl = resolveMediaUrl(settings.logoUrl);
-  const siteName = settings.siteName ?? 'Structa';
+  const siteName = settings.siteName ?? "Structa";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur">
@@ -36,6 +42,14 @@ export function SiteHeader({ settings, menu }: { settings: SiteSettings; menu: M
           ))}
         </nav>
 
+        <nav aria-label="Language" className="flex gap-3 text-sm">
+          <Link href="/tr" hrefLang="tr">
+            TR
+          </Link>
+          <Link href="/en" hrefLang="en">
+            EN
+          </Link>
+        </nav>
         <div className="md:hidden">
           <MobileNav items={items} />
         </div>
@@ -44,20 +58,24 @@ export function SiteHeader({ settings, menu }: { settings: SiteSettings; menu: M
   );
 }
 
-function DesktopNavItem({ item }: { item: Menu['items'][number] }) {
+function DesktopNavItem({ item }: { item: Menu["items"][number] }) {
   const hasChildren = item.children.length > 0;
 
   return (
     <div className="group relative">
       <Link
         href={item.url}
-        target={item.target === 'BLANK' ? '_blank' : undefined}
-        rel={item.target === 'BLANK' ? 'noopener noreferrer' : undefined}
+        target={item.target === "BLANK" ? "_blank" : undefined}
+        rel={item.target === "BLANK" ? "noopener noreferrer" : undefined}
         className="flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium text-foreground/80 transition hover:bg-black/[.03] hover:text-foreground"
       >
         {item.label}
         {hasChildren && (
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 opacity-60">
+          <svg
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-3.5 w-3.5 opacity-60"
+          >
             <path
               fillRule="evenodd"
               d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
@@ -73,8 +91,8 @@ function DesktopNavItem({ item }: { item: Menu['items'][number] }) {
             <Link
               key={child.id}
               href={child.url}
-              target={child.target === 'BLANK' ? '_blank' : undefined}
-              rel={child.target === 'BLANK' ? 'noopener noreferrer' : undefined}
+              target={child.target === "BLANK" ? "_blank" : undefined}
+              rel={child.target === "BLANK" ? "noopener noreferrer" : undefined}
               className="block rounded-lg px-3 py-2 text-sm text-foreground/80 transition hover:bg-black/[.04] hover:text-foreground"
             >
               {child.label}

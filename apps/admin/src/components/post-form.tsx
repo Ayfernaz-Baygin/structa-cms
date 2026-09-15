@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
+import Link from "next/link";
+import { useContentTranslations } from "@/lib/content-translations";
+import { LocaleTabs } from "./locale-tabs";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 
-import type { Post, PostCategory, PostStatus } from '@/lib/api';
-import { slugify } from '@/lib/slug';
+import type { Post, PostCategory, PostStatus } from "@/lib/api";
+import { slugify } from "@/lib/slug";
 
-import { MediaPicker } from './media-picker';
+import { MediaPicker } from "./media-picker";
 
 interface PostFormProps {
   initialPost?: Post;
@@ -16,20 +18,32 @@ interface PostFormProps {
 export function PostForm({ initialPost }: PostFormProps) {
   const router = useRouter();
   const isEdit = Boolean(initialPost);
+  const translation = useContentTranslations(initialPost, [
+    "title",
+    "slug",
+    "excerpt",
+    "content",
+    "seoTitle",
+    "seoDescription",
+  ]);
+  const { locale } = translation;
 
-  const [title, setTitle] = useState(initialPost?.title ?? '');
-  const [slug, setSlug] = useState(initialPost?.slug ?? '');
-  const [slugTouched, setSlugTouched] = useState(isEdit);
-  const [excerpt, setExcerpt] = useState(initialPost?.excerpt ?? '');
-  const [content, setContent] = useState(initialPost?.content ?? '');
-  const [categoryId, setCategoryId] = useState(initialPost?.categoryId ?? '');
-  const [coverImage, setCoverImage] = useState(initialPost?.coverImage ?? '');
-  const [status, setStatus] = useState<PostStatus>(initialPost?.status ?? 'DRAFT');
-  const [seoTitle, setSeoTitle] = useState(initialPost?.seoTitle ?? '');
-  const [seoDescription, setSeoDescription] = useState(initialPost?.seoDescription ?? '');
+  const [title, setTitle] = translation.field("title");
+  const [slug, setSlug] = translation.field("slug");
+  const [slugTouched, setSlugTouched] = translation.slugState;
+  const [excerpt, setExcerpt] = translation.field("excerpt");
+  const [content, setContent] = translation.field("content");
+  const [categoryId, setCategoryId] = useState(initialPost?.categoryId ?? "");
+  const [coverImage, setCoverImage] = useState(initialPost?.coverImage ?? "");
+  const [status, setStatus] = useState<PostStatus>(
+    initialPost?.status ?? "DRAFT",
+  );
+  const [seoTitle, setSeoTitle] = translation.field("seoTitle");
+  const [seoDescription, setSeoDescription] =
+    translation.field("seoDescription");
 
   const [categories, setCategories] = useState<PostCategory[] | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -37,7 +51,9 @@ export function PostForm({ initialPost }: PostFormProps) {
 
     async function loadCategories() {
       try {
-        const response = await fetch('/api/post-categories', { cache: 'no-store' });
+        const response = await fetch("/api/post-categories", {
+          cache: "no-store",
+        });
         const data = await response.json();
         if (!cancelled && response.ok) {
           setCategories(data);
@@ -79,26 +95,27 @@ export function PostForm({ initialPost }: PostFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    setError('');
+    setError("");
 
     const payload = {
+      locale,
       title,
       slug,
-      excerpt: excerpt.trim().length > 0 ? excerpt : undefined,
-      content: content.trim().length > 0 ? content : undefined,
+      excerpt,
+      content,
       categoryId: categoryId.length > 0 ? categoryId : null,
       coverImage: coverImage.trim().length > 0 ? coverImage : undefined,
       status,
-      seoTitle: seoTitle.trim().length > 0 ? seoTitle : undefined,
-      seoDescription: seoDescription.trim().length > 0 ? seoDescription : undefined,
+      seoTitle,
+      seoDescription,
     };
 
     try {
-      const response = await fetch(
-        isEdit ? `/api/posts/${initialPost!.id}` : '/api/posts',
+      const response = await translation.save(
+        isEdit ? `/api/posts/${initialPost!.id}` : "/api/posts",
         {
-          method: isEdit ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: isEdit ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
       );
@@ -107,22 +124,22 @@ export function PostForm({ initialPost }: PostFormProps) {
 
       if (!response.ok) {
         if (response.status === 409) {
-          setError('Bu slug zaten kullanılıyor. Lütfen farklı bir slug girin.');
+          setError("Bu slug zaten kullanılıyor. Lütfen farklı bir slug girin.");
         } else if (response.status === 400 && data) {
           const message = Array.isArray(data.message)
-            ? data.message.join(' ')
+            ? data.message.join(" ")
             : data.message;
-          setError(message ?? 'Girdiğiniz bilgiler geçersiz.');
+          setError(message ?? "Girdiğiniz bilgiler geçersiz.");
         } else {
-          setError(data?.message ?? 'Yazı kaydedilemedi.');
+          setError(data?.message ?? "Yazı kaydedilemedi.");
         }
         return;
       }
 
-      router.push('/blog');
+      router.push("/blog");
       router.refresh();
     } catch {
-      setError('Sunucuya bağlanılamadı.');
+      setError("Sunucuya bağlanılamadı.");
     } finally {
       setSaving(false);
     }
@@ -130,11 +147,19 @@ export function PostForm({ initialPost }: PostFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <LocaleTabs
+        locale={locale}
+        onChange={translation.setLocale}
+        disabled={saving}
+      />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
             <div>
-              <label htmlFor="title" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="title"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Başlık
               </label>
               <input
@@ -149,7 +174,10 @@ export function PostForm({ initialPost }: PostFormProps) {
 
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between">
-                <label htmlFor="slug" className="block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="slug"
+                  className="block text-sm font-medium text-zinc-300"
+                >
                   Slug
                 </label>
                 <button
@@ -173,7 +201,10 @@ export function PostForm({ initialPost }: PostFormProps) {
             </div>
 
             <div className="mt-5">
-              <label htmlFor="excerpt" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="excerpt"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Özet
               </label>
               <textarea
@@ -186,7 +217,10 @@ export function PostForm({ initialPost }: PostFormProps) {
             </div>
 
             <div className="mt-5">
-              <label htmlFor="content" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="content"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 İçerik
               </label>
               <textarea
@@ -203,7 +237,10 @@ export function PostForm({ initialPost }: PostFormProps) {
             <h2 className="text-sm font-semibold text-white">SEO</h2>
 
             <div className="mt-4">
-              <label htmlFor="seoTitle" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="seoTitle"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 SEO Başlığı
               </label>
               <input
@@ -235,7 +272,10 @@ export function PostForm({ initialPost }: PostFormProps) {
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <label htmlFor="status" className="mb-2 block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="status"
+              className="mb-2 block text-sm font-medium text-zinc-300"
+            >
               Durum
             </label>
             <select
@@ -249,7 +289,10 @@ export function PostForm({ initialPost }: PostFormProps) {
             </select>
 
             <div className="mt-5">
-              <label htmlFor="categoryId" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="categoryId"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Kategori
               </label>
               <select
@@ -279,9 +322,11 @@ export function PostForm({ initialPost }: PostFormProps) {
               <p className="mt-2 text-sm text-white">
                 {[initialPost.author.firstName, initialPost.author.lastName]
                   .filter(Boolean)
-                  .join(' ') || initialPost.author.email}
+                  .join(" ") || initialPost.author.email}
               </p>
-              <p className="mt-1 text-xs text-zinc-500">{initialPost.author.email}</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                {initialPost.author.email}
+              </p>
             </div>
           )}
 
@@ -308,7 +353,11 @@ export function PostForm({ initialPost }: PostFormProps) {
           disabled={saving}
           className="rounded-xl bg-indigo-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? 'Kaydediliyor...' : isEdit ? 'Değişiklikleri Kaydet' : 'Yazıyı Oluştur'}
+          {saving
+            ? "Kaydediliyor..."
+            : isEdit
+              ? "Değişiklikleri Kaydet"
+              : "Yazıyı Oluştur"}
         </button>
 
         <Link

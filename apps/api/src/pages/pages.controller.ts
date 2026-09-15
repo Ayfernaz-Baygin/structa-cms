@@ -1,3 +1,7 @@
+import { UseInterceptors } from '@nestjs/common';
+import { TranslationConflictInterceptor } from '../translations/translation-conflict.interceptor.js';
+import { Query } from '@nestjs/common';
+import { LocaleQueryDto } from '../translations/locale.dto.js';
 import {
   Body,
   Controller,
@@ -10,7 +14,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { CurrentUser, type CurrentUserPayload } from '../auth/current-user.decorator.js';
+import {
+  CurrentUser,
+  type CurrentUserPayload,
+} from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
 import { RolesGuard } from '../auth/roles.guard.js';
@@ -22,6 +29,7 @@ import { UpdatePageSectionDto } from './dto/update-page-section.dto.js';
 import { UpdatePageDto } from './dto/update-page.dto.js';
 import { PagesService } from './pages.service.js';
 
+@UseInterceptors(TranslationConflictInterceptor)
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
 @Controller('pages')
@@ -29,13 +37,13 @@ export class PagesController {
   constructor(private readonly pagesService: PagesService) {}
 
   @Get()
-  findAll() {
-    return this.pagesService.findAll();
+  findAll(@Query() query: LocaleQueryDto) {
+    return this.pagesService.findAll(query.locale);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.pagesService.findOne(id);
+  findOne(@Param('id') id: string, @Query() query: LocaleQueryDto) {
+    return this.pagesService.findOne(id, query.locale);
   }
 
   @Post()
@@ -64,12 +72,18 @@ export class PagesController {
   }
 
   @Post(':pageId/sections')
-  createSection(@Param('pageId') pageId: string, @Body() dto: CreatePageSectionDto) {
+  createSection(
+    @Param('pageId') pageId: string,
+    @Body() dto: CreatePageSectionDto,
+  ) {
     return this.pagesService.createSection(pageId, dto);
   }
 
   @Patch(':pageId/sections/reorder')
-  reorderSections(@Param('pageId') pageId: string, @Body() dto: ReorderPageSectionsDto) {
+  reorderSections(
+    @Param('pageId') pageId: string,
+    @Body() dto: ReorderPageSectionsDto,
+  ) {
     return this.pagesService.reorderSections(pageId, dto);
   }
 
@@ -83,7 +97,10 @@ export class PagesController {
   }
 
   @Delete(':pageId/sections/:sectionId')
-  removeSection(@Param('pageId') pageId: string, @Param('sectionId') sectionId: string) {
+  removeSection(
+    @Param('pageId') pageId: string,
+    @Param('sectionId') sectionId: string,
+  ) {
     return this.pagesService.removeSection(pageId, sectionId);
   }
 
@@ -93,7 +110,10 @@ export class PagesController {
   }
 
   @Get(':id/revisions/:revisionId')
-  findRevision(@Param('id') id: string, @Param('revisionId') revisionId: string) {
+  findRevision(
+    @Param('id') id: string,
+    @Param('revisionId') revisionId: string,
+  ) {
     return this.pagesService.findRevision(id, revisionId);
   }
 

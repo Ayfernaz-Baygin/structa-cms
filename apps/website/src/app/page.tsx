@@ -1,13 +1,19 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
+import type { Metadata } from "next";
+import Link from "@/components/locale-link";
 
-import { CmsPageContent } from '@/components/cms-page-content';
-import { Container } from '@/components/container';
-import { PostCard } from '@/components/post-card';
-import { ProjectCard } from '@/components/project-card';
-import { SectionHeading } from '@/components/section-heading';
-import { ServiceCard } from '@/components/service-card';
-import { getPageBySlug, getPosts, getProjects, getServices, getSettings } from '@/lib/api';
+import { CmsPageContent } from "@/components/cms-page-content";
+import { Container } from "@/components/container";
+import { PostCard } from "@/components/post-card";
+import { ProjectCard } from "@/components/project-card";
+import { SectionHeading } from "@/components/section-heading";
+import { ServiceCard } from "@/components/service-card";
+import {
+  getPageBySlug,
+  getPosts,
+  getProjects,
+  getServices,
+  getSettings,
+} from "@/lib/api";
 
 async function resolveHomePage() {
   const settings = await getSettings();
@@ -53,10 +59,11 @@ export default async function HomePage() {
       <section className="border-b border-border bg-surface">
         <Container className="flex flex-col items-start gap-6 py-24 sm:py-32">
           <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-            {settings.siteName ?? 'Structa'}
+            {settings.siteName ?? "Structa"}
           </p>
           <h1 className="max-w-3xl font-(family-name:--font-display) text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
-            {settings.siteDescription ?? 'Mekanları anlamlı, kalıcı tasarımlara dönüştürüyoruz.'}
+            {settings.siteDescription ??
+              "Mekanları anlamlı, kalıcı tasarımlara dönüştürüyoruz."}
           </h1>
           <div className="flex flex-wrap gap-3 pt-2">
             <Link
@@ -80,7 +87,10 @@ export default async function HomePage() {
           <Container>
             <div className="flex flex-wrap items-end justify-between gap-6">
               <SectionHeading eyebrow="Neler Yapıyoruz" title="Hizmetlerimiz" />
-              <Link href="/services" className="text-sm font-semibold text-accent hover:underline">
+              <Link
+                href="/services"
+                className="text-sm font-semibold text-accent hover:underline"
+              >
                 Tümünü Gör →
               </Link>
             </div>
@@ -98,7 +108,10 @@ export default async function HomePage() {
           <Container>
             <div className="flex flex-wrap items-end justify-between gap-6">
               <SectionHeading eyebrow="Portföy" title="Seçili Projeler" />
-              <Link href="/projects" className="text-sm font-semibold text-accent hover:underline">
+              <Link
+                href="/projects"
+                className="text-sm font-semibold text-accent hover:underline"
+              >
                 Tümünü Gör →
               </Link>
             </div>
@@ -114,10 +127,12 @@ export default async function HomePage() {
       <section className="py-20 sm:py-28">
         <Container className="flex flex-col items-center gap-6 rounded-3xl border border-border bg-stone-900 px-6 py-16 text-center text-white sm:px-16">
           <h2 className="font-(family-name:--font-display) text-3xl font-semibold tracking-tight sm:text-4xl">
-            {settings.siteName ?? 'Structa'} ile projenizi hayata geçirelim.
+            {settings.siteName ?? "Structa"} ile projenizi hayata geçirelim.
           </h2>
           {settings.siteDescription && (
-            <p className="max-w-xl text-base leading-relaxed text-white/70">{settings.siteDescription}</p>
+            <p className="max-w-xl text-base leading-relaxed text-white/70">
+              {settings.siteDescription}
+            </p>
           )}
           {settings.email && (
             <a
@@ -135,7 +150,10 @@ export default async function HomePage() {
           <Container>
             <div className="flex flex-wrap items-end justify-between gap-6">
               <SectionHeading eyebrow="Güncel" title="Blogdan Son Yazılar" />
-              <Link href="/blog" className="text-sm font-semibold text-accent hover:underline">
+              <Link
+                href="/blog"
+                className="text-sm font-semibold text-accent hover:underline"
+              >
                 Tümünü Gör →
               </Link>
             </div>

@@ -1,17 +1,24 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
+import Link from "next/link";
+import { useContentTranslations } from "@/lib/content-translations";
+import { LocaleTabs } from "./locale-tabs";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 
-import type { Project, ProjectCategory, ProjectImage, ProjectStatus } from '@/lib/api';
-import { slugify } from '@/lib/slug';
+import type {
+  Project,
+  ProjectCategory,
+  ProjectImage,
+  ProjectStatus,
+} from "@/lib/api";
+import { slugify } from "@/lib/slug";
 
-import { MediaPicker } from './media-picker';
+import { MediaPicker } from "./media-picker";
 
 function toDateInputValue(value: string | null): string {
   if (!value) {
-    return '';
+    return "";
   }
   return value.slice(0, 10);
 }
@@ -23,26 +30,48 @@ interface ProjectFormProps {
 export function ProjectForm({ initialProject }: ProjectFormProps) {
   const router = useRouter();
   const isEdit = Boolean(initialProject);
+  const translation = useContentTranslations(initialProject, [
+    "title",
+    "slug",
+    "shortDescription",
+    "description",
+    "seoTitle",
+    "seoDescription",
+  ]);
+  const { locale } = translation;
 
-  const [title, setTitle] = useState(initialProject?.title ?? '');
-  const [slug, setSlug] = useState(initialProject?.slug ?? '');
-  const [slugTouched, setSlugTouched] = useState(isEdit);
+  const [title, setTitle] = translation.field("title");
+  const [slug, setSlug] = translation.field("slug");
+  const [slugTouched, setSlugTouched] = translation.slugState;
   const [shortDescription, setShortDescription] = useState(
-    initialProject?.shortDescription ?? '',
+    initialProject?.shortDescription ?? "",
   );
-  const [description, setDescription] = useState(initialProject?.description ?? '');
-  const [clientName, setClientName] = useState(initialProject?.clientName ?? '');
-  const [location, setLocation] = useState(initialProject?.location ?? '');
-  const [projectDate, setProjectDate] = useState(toDateInputValue(initialProject?.projectDate ?? null));
-  const [categoryId, setCategoryId] = useState(initialProject?.categoryId ?? '');
-  const [coverImage, setCoverImage] = useState(initialProject?.coverImage ?? '');
-  const [sortOrder, setSortOrder] = useState(String(initialProject?.sortOrder ?? 0));
-  const [status, setStatus] = useState<ProjectStatus>(initialProject?.status ?? 'DRAFT');
-  const [seoTitle, setSeoTitle] = useState(initialProject?.seoTitle ?? '');
-  const [seoDescription, setSeoDescription] = useState(initialProject?.seoDescription ?? '');
+  const [description, setDescription] = translation.field("description");
+  const [clientName, setClientName] = useState(
+    initialProject?.clientName ?? "",
+  );
+  const [location, setLocation] = useState(initialProject?.location ?? "");
+  const [projectDate, setProjectDate] = useState(
+    toDateInputValue(initialProject?.projectDate ?? null),
+  );
+  const [categoryId, setCategoryId] = useState(
+    initialProject?.categoryId ?? "",
+  );
+  const [coverImage, setCoverImage] = useState(
+    initialProject?.coverImage ?? "",
+  );
+  const [sortOrder, setSortOrder] = useState(
+    String(initialProject?.sortOrder ?? 0),
+  );
+  const [status, setStatus] = useState<ProjectStatus>(
+    initialProject?.status ?? "DRAFT",
+  );
+  const [seoTitle, setSeoTitle] = translation.field("seoTitle");
+  const [seoDescription, setSeoDescription] =
+    translation.field("seoDescription");
 
   const [categories, setCategories] = useState<ProjectCategory[] | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -50,7 +79,9 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
 
     async function loadCategories() {
       try {
-        const response = await fetch('/api/project-categories', { cache: 'no-store' });
+        const response = await fetch("/api/project-categories", {
+          cache: "no-store",
+        });
         const data = await response.json();
         if (!cancelled && response.ok) {
           setCategories(data);
@@ -92,15 +123,16 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    setError('');
+    setError("");
 
     const parsedSortOrder = Number.parseInt(sortOrder, 10);
 
     const payload = {
+      locale,
       title,
       slug,
-      shortDescription: shortDescription.trim().length > 0 ? shortDescription : undefined,
-      description: description.trim().length > 0 ? description : undefined,
+      shortDescription,
+      description,
       clientName: clientName.trim().length > 0 ? clientName : undefined,
       location: location.trim().length > 0 ? location : undefined,
       projectDate: projectDate.length > 0 ? projectDate : undefined,
@@ -108,16 +140,16 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
       coverImage: coverImage.trim().length > 0 ? coverImage : undefined,
       status,
       sortOrder: Number.isNaN(parsedSortOrder) ? 0 : parsedSortOrder,
-      seoTitle: seoTitle.trim().length > 0 ? seoTitle : undefined,
-      seoDescription: seoDescription.trim().length > 0 ? seoDescription : undefined,
+      seoTitle,
+      seoDescription,
     };
 
     try {
-      const response = await fetch(
-        isEdit ? `/api/projects/${initialProject!.id}` : '/api/projects',
+      const response = await translation.save(
+        isEdit ? `/api/projects/${initialProject!.id}` : "/api/projects",
         {
-          method: isEdit ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: isEdit ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
       );
@@ -126,22 +158,22 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
 
       if (!response.ok) {
         if (response.status === 409) {
-          setError('Bu slug zaten kullanılıyor. Lütfen farklı bir slug girin.');
+          setError("Bu slug zaten kullanılıyor. Lütfen farklı bir slug girin.");
         } else if (response.status === 400 && data) {
           const message = Array.isArray(data.message)
-            ? data.message.join(' ')
+            ? data.message.join(" ")
             : data.message;
-          setError(message ?? 'Girdiğiniz bilgiler geçersiz.');
+          setError(message ?? "Girdiğiniz bilgiler geçersiz.");
         } else {
-          setError(data?.message ?? 'Proje kaydedilemedi.');
+          setError(data?.message ?? "Proje kaydedilemedi.");
         }
         return;
       }
 
-      router.push('/projects');
+      router.push("/projects");
       router.refresh();
     } catch {
-      setError('Sunucuya bağlanılamadı.');
+      setError("Sunucuya bağlanılamadı.");
     } finally {
       setSaving(false);
     }
@@ -150,11 +182,19 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
+        <LocaleTabs
+          locale={locale}
+          onChange={translation.setLocale}
+          disabled={saving}
+        />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
               <div>
-                <label htmlFor="title" className="mb-2 block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="title"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
                   Başlık
                 </label>
                 <input
@@ -169,7 +209,10 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
 
               <div className="mt-5">
                 <div className="mb-2 flex items-center justify-between">
-                  <label htmlFor="slug" className="block text-sm font-medium text-zinc-300">
+                  <label
+                    htmlFor="slug"
+                    className="block text-sm font-medium text-zinc-300"
+                  >
                     Slug
                   </label>
                   <button
@@ -209,7 +252,10 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
               </div>
 
               <div className="mt-5">
-                <label htmlFor="description" className="mb-2 block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="description"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
                   Açıklama
                 </label>
                 <textarea
@@ -226,7 +272,10 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
               <h2 className="text-sm font-semibold text-white">SEO</h2>
 
               <div className="mt-4">
-                <label htmlFor="seoTitle" className="mb-2 block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="seoTitle"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
                   SEO Başlığı
                 </label>
                 <input
@@ -258,13 +307,18 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
 
           <div className="space-y-6">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-              <label htmlFor="status" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="status"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Durum
               </label>
               <select
                 id="status"
                 value={status}
-                onChange={(event) => setStatus(event.target.value as ProjectStatus)}
+                onChange={(event) =>
+                  setStatus(event.target.value as ProjectStatus)
+                }
                 className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
               >
                 <option value="DRAFT">Taslak</option>
@@ -272,7 +326,10 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
               </select>
 
               <div className="mt-5">
-                <label htmlFor="sortOrder" className="mb-2 block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="sortOrder"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
                   Sıralama
                 </label>
                 <input
@@ -286,7 +343,10 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
               </div>
 
               <div className="mt-5">
-                <label htmlFor="categoryId" className="mb-2 block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="categoryId"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
                   Kategori
                 </label>
                 <select
@@ -304,14 +364,18 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
                 </select>
                 {categories !== null && categories.length === 0 && (
                   <p className="mt-2 text-xs text-zinc-500">
-                    Henüz kategori yok. Kategoriler listesinden ekleyebilirsiniz.
+                    Henüz kategori yok. Kategoriler listesinden
+                    ekleyebilirsiniz.
                   </p>
                 )}
               </div>
             </div>
 
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-              <label htmlFor="clientName" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="clientName"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Müşteri
               </label>
               <input
@@ -323,7 +387,10 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
               />
 
               <div className="mt-5">
-                <label htmlFor="location" className="mb-2 block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="location"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
                   Konum
                 </label>
                 <input
@@ -336,7 +403,10 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
               </div>
 
               <div className="mt-5">
-                <label htmlFor="projectDate" className="mb-2 block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="projectDate"
+                  className="mb-2 block text-sm font-medium text-zinc-300"
+                >
                   Proje Tarihi
                 </label>
                 <input
@@ -372,7 +442,11 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
             disabled={saving}
             className="rounded-xl bg-indigo-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? 'Kaydediliyor...' : isEdit ? 'Değişiklikleri Kaydet' : 'Projeyi Oluştur'}
+            {saving
+              ? "Kaydediliyor..."
+              : isEdit
+                ? "Değişiklikleri Kaydet"
+                : "Projeyi Oluştur"}
           </button>
 
           <Link
@@ -391,10 +465,10 @@ export function ProjectForm({ initialProject }: ProjectFormProps) {
 
 function ProjectGallery({ project }: { project: Project }) {
   const [images, setImages] = useState<ProjectImage[]>(project.images);
-  const [imageUrl, setImageUrl] = useState('');
-  const [altText, setAltText] = useState('');
-  const [imageSortOrder, setImageSortOrder] = useState('0');
-  const [error, setError] = useState('');
+  const [imageUrl, setImageUrl] = useState("");
+  const [altText, setAltText] = useState("");
+  const [imageSortOrder, setImageSortOrder] = useState("0");
+  const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -403,19 +477,19 @@ function ProjectGallery({ project }: { project: Project }) {
     event.preventDefault();
 
     if (imageUrl.trim().length === 0) {
-      setError('Görsel URL veya medya seçimi zorunludur.');
+      setError("Görsel URL veya medya seçimi zorunludur.");
       return;
     }
 
     setAdding(true);
-    setError('');
+    setError("");
 
     const parsedSortOrder = Number.parseInt(imageSortOrder, 10);
 
     try {
       const response = await fetch(`/api/projects/${project.id}/images`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl,
           altText: altText.trim().length > 0 ? altText : undefined,
@@ -426,16 +500,18 @@ function ProjectGallery({ project }: { project: Project }) {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        const message = Array.isArray(data?.message) ? data.message.join(' ') : data?.message;
-        throw new Error(message ?? 'Görsel eklenemedi.');
+        const message = Array.isArray(data?.message)
+          ? data.message.join(" ")
+          : data?.message;
+        throw new Error(message ?? "Görsel eklenemedi.");
       }
 
       setImages((data as Project).images);
-      setImageUrl('');
-      setAltText('');
-      setImageSortOrder('0');
+      setImageUrl("");
+      setAltText("");
+      setImageSortOrder("0");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Görsel eklenemedi.');
+      setError(err instanceof Error ? err.message : "Görsel eklenemedi.");
     } finally {
       setAdding(false);
     }
@@ -443,22 +519,25 @@ function ProjectGallery({ project }: { project: Project }) {
 
   async function handleDeleteImage(imageId: string) {
     setDeletingId(imageId);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch(`/api/projects/${project.id}/images/${imageId}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/projects/${project.id}/images/${imageId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(data?.message ?? 'Görsel silinemedi.');
+        throw new Error(data?.message ?? "Görsel silinemedi.");
       }
 
       setImages((data as Project).images);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Görsel silinemedi.');
+      setError(err instanceof Error ? err.message : "Görsel silinemedi.");
     } finally {
       setDeletingId(null);
       setConfirmId(null);
@@ -476,7 +555,12 @@ function ProjectGallery({ project }: { project: Project }) {
       )}
 
       <form onSubmit={handleAddImage} className="mt-4 space-y-3">
-        <MediaPicker label="Görsel" value={imageUrl} onChange={setImageUrl} accept="image" />
+        <MediaPicker
+          label="Görsel"
+          value={imageUrl}
+          onChange={setImageUrl}
+          accept="image"
+        />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.5fr_0.7fr_auto]">
           <input
@@ -499,21 +583,27 @@ function ProjectGallery({ project }: { project: Project }) {
             disabled={adding}
             className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {adding ? 'Ekleniyor...' : '+ Ekle'}
+            {adding ? "Ekleniyor..." : "+ Ekle"}
           </button>
         </div>
       </form>
 
       <div className="mt-5 divide-y divide-zinc-800/60">
         {images.length === 0 ? (
-          <p className="py-4 text-sm text-zinc-500">Henüz galeri görseli eklenmedi.</p>
+          <p className="py-4 text-sm text-zinc-500">
+            Henüz galeri görseli eklenmedi.
+          </p>
         ) : (
           images.map((image) => (
-            <div key={image.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+            <div
+              key={image.id}
+              className="flex flex-wrap items-center justify-between gap-3 py-3"
+            >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-white">{image.imageUrl}</p>
                 <p className="text-xs text-zinc-500">
-                  {image.altText ? image.altText : 'Alt metin yok'} · Sıra: {image.sortOrder}
+                  {image.altText ? image.altText : "Alt metin yok"} · Sıra:{" "}
+                  {image.sortOrder}
                 </p>
               </div>
 
@@ -526,7 +616,7 @@ function ProjectGallery({ project }: { project: Project }) {
                     disabled={deletingId === image.id}
                     className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {deletingId === image.id ? 'Siliniyor...' : 'Evet, Sil'}
+                    {deletingId === image.id ? "Siliniyor..." : "Evet, Sil"}
                   </button>
                   <button
                     type="button"

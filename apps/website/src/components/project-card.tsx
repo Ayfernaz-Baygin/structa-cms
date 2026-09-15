@@ -1,12 +1,14 @@
-import Image from 'next/image';
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "@/components/locale-link";
 
-import type { Project } from '@/lib/api';
-import { resolveMediaUrl } from '@/lib/media';
+import type { Project } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/media";
 
 export function ProjectCard({ project }: { project: Project }) {
   const coverUrl = resolveMediaUrl(project.coverImage);
-  const meta = [project.category?.name, project.location].filter(Boolean).join(' · ');
+  const meta = [project.category?.name, project.location]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <Link
@@ -28,11 +30,17 @@ export function ProjectCard({ project }: { project: Project }) {
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-5">
-        {meta && <span className="text-xs font-medium uppercase tracking-wide text-accent">{meta}</span>}
+        {meta && (
+          <span className="text-xs font-medium uppercase tracking-wide text-accent">
+            {meta}
+          </span>
+        )}
         <h3 className="font-(family-name:--font-display) text-lg font-semibold text-foreground">
           {project.title}
         </h3>
-        {project.clientName && <p className="text-sm text-muted">{project.clientName}</p>}
+        {project.clientName && (
+          <p className="text-sm text-muted">{project.clientName}</p>
+        )}
       </div>
     </Link>
   );

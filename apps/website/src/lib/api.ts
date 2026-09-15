@@ -1,7 +1,11 @@
-const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+import { getLocale } from "./locale";
+const API_URL =
+  process.env.API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:4000";
 
-export type MenuLocation = 'HEADER' | 'FOOTER';
-export type MenuItemTarget = 'SELF' | 'BLANK';
+export type MenuLocation = "HEADER" | "FOOTER";
+export type MenuItemTarget = "SELF" | "BLANK";
 
 export interface SiteSettings {
   id: string;
@@ -40,13 +44,7 @@ export interface Menu {
 }
 
 export type SectionType =
-  | 'HERO'
-  | 'TEXT'
-  | 'IMAGE_TEXT'
-  | 'SERVICES'
-  | 'PROJECTS'
-  | 'POSTS'
-  | 'CTA';
+  "HERO" | "TEXT" | "IMAGE_TEXT" | "SERVICES" | "PROJECTS" | "POSTS" | "CTA";
 
 export interface HeroSectionData {
   title: string;
@@ -65,7 +63,7 @@ export interface ImageTextSectionData {
   title?: string;
   body: string;
   imageUrl: string;
-  imagePosition?: 'left' | 'right';
+  imagePosition?: "left" | "right";
 }
 
 export interface ListSectionData {
@@ -172,20 +170,24 @@ export interface Post {
 class PublicApiError extends Error {}
 
 async function publicFetch<T>(path: string): Promise<T> {
+  const locale = await getLocale();
+  const localizedPath = `${path}${path.includes("?") ? "&" : "?"}locale=${locale}`;
   let response: Response;
 
   try {
-    response = await fetch(`${API_URL}/public${path}`, { cache: 'no-store' });
+    response = await fetch(`${API_URL}/public${localizedPath}`, {
+      cache: "no-store",
+    });
   } catch {
-    throw new PublicApiError('İçerik sunucusuna şu anda ulaşılamıyor.');
+    throw new PublicApiError("İçerik sunucusuna şu anda ulaşılamıyor.");
   }
 
   if (response.status === 404) {
-    throw new PublicApiError('NOT_FOUND');
+    throw new PublicApiError("NOT_FOUND");
   }
 
   if (!response.ok) {
-    throw new PublicApiError('İçerik yüklenirken bir sorun oluştu.');
+    throw new PublicApiError("İçerik yüklenirken bir sorun oluştu.");
   }
 
   return response.json() as Promise<T>;
@@ -195,7 +197,7 @@ async function publicFetchOrNull<T>(path: string): Promise<T | null> {
   try {
     return await publicFetch<T>(path);
   } catch (error) {
-    if (error instanceof PublicApiError && error.message === 'NOT_FOUND') {
+    if (error instanceof PublicApiError && error.message === "NOT_FOUND") {
       return null;
     }
 
@@ -204,7 +206,7 @@ async function publicFetchOrNull<T>(path: string): Promise<T | null> {
 }
 
 export function getSettings(): Promise<SiteSettings> {
-  return publicFetch<SiteSettings>('/settings');
+  return publicFetch<SiteSettings>("/settings");
 }
 
 export function getMenu(location: MenuLocation): Promise<Menu | null> {
@@ -216,7 +218,7 @@ export function getPageBySlug(slug: string): Promise<Page | null> {
 }
 
 export function getServices(limit?: number): Promise<Service[]> {
-  const query = limit ? `?limit=${limit}` : '';
+  const query = limit ? `?limit=${limit}` : "";
   return publicFetch<Service[]>(`/services${query}`);
 }
 
@@ -225,7 +227,7 @@ export function getServiceBySlug(slug: string): Promise<Service | null> {
 }
 
 export function getProjects(limit?: number): Promise<Project[]> {
-  const query = limit ? `?limit=${limit}` : '';
+  const query = limit ? `?limit=${limit}` : "";
   return publicFetch<Project[]>(`/projects${query}`);
 }
 
@@ -234,7 +236,7 @@ export function getProjectBySlug(slug: string): Promise<Project | null> {
 }
 
 export function getPosts(limit?: number): Promise<Post[]> {
-  const query = limit ? `?limit=${limit}` : '';
+  const query = limit ? `?limit=${limit}` : "";
   return publicFetch<Post[]>(`/posts${query}`);
 }
 

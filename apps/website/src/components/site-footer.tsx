@@ -1,6 +1,6 @@
-import Link from 'next/link';
+import Link from "@/components/locale-link";
 
-import type { Menu, SiteSettings } from '@/lib/api';
+import type { Menu, SiteSettings } from "@/lib/api";
 
 function SocialLink({ href, label }: { href: string | null; label: string }) {
   if (!href) {
@@ -19,10 +19,16 @@ function SocialLink({ href, label }: { href: string | null; label: string }) {
   );
 }
 
-export function SiteFooter({ settings, menu }: { settings: SiteSettings; menu: Menu | null }) {
+export function SiteFooter({
+  settings,
+  menu,
+}: {
+  settings: SiteSettings;
+  menu: Menu | null;
+}) {
   const items = menu?.items ?? [];
   const year = new Date().getFullYear();
-  const siteName = settings.siteName ?? 'Structa';
+  const siteName = settings.siteName ?? "Structa";
 
   const hasSocial =
     settings.instagramUrl ||
@@ -35,9 +41,13 @@ export function SiteFooter({ settings, menu }: { settings: SiteSettings; menu: M
     <footer className="mt-24 border-t border-white/10 bg-stone-900 text-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-3">
         <div>
-          <p className="font-(family-name:--font-display) text-xl font-semibold">{siteName}</p>
+          <p className="font-(family-name:--font-display) text-xl font-semibold">
+            {siteName}
+          </p>
           {settings.footerText && (
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/60">{settings.footerText}</p>
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/60">
+              {settings.footerText}
+            </p>
           )}
           {hasSocial && (
             <div className="mt-5 flex flex-wrap gap-2">
@@ -52,14 +62,18 @@ export function SiteFooter({ settings, menu }: { settings: SiteSettings; menu: M
 
         {items.length > 0 && (
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/40">Bağlantılar</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-white/40">
+              Bağlantılar
+            </p>
             <nav className="mt-4 flex flex-col gap-2">
               {items.map((item) => (
                 <Link
                   key={item.id}
                   href={item.url}
-                  target={item.target === 'BLANK' ? '_blank' : undefined}
-                  rel={item.target === 'BLANK' ? 'noopener noreferrer' : undefined}
+                  target={item.target === "BLANK" ? "_blank" : undefined}
+                  rel={
+                    item.target === "BLANK" ? "noopener noreferrer" : undefined
+                  }
                   className="text-sm text-white/70 transition hover:text-white"
                 >
                   {item.label}
@@ -71,19 +85,29 @@ export function SiteFooter({ settings, menu }: { settings: SiteSettings; menu: M
 
         {(settings.email || settings.phone || settings.address) && (
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/40">İletişim</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-white/40">
+              İletişim
+            </p>
             <div className="mt-4 flex flex-col gap-2 text-sm text-white/70">
               {settings.email && (
-                <a href={`mailto:${settings.email}`} className="transition hover:text-white">
+                <a
+                  href={`mailto:${settings.email}`}
+                  className="transition hover:text-white"
+                >
                   {settings.email}
                 </a>
               )}
               {settings.phone && (
-                <a href={`tel:${settings.phone}`} className="transition hover:text-white">
+                <a
+                  href={`tel:${settings.phone}`}
+                  className="transition hover:text-white"
+                >
                   {settings.phone}
                 </a>
               )}
-              {settings.address && <p className="whitespace-pre-line">{settings.address}</p>}
+              {settings.address && (
+                <p className="whitespace-pre-line">{settings.address}</p>
+              )}
             </div>
           </div>
         )}

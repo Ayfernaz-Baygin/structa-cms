@@ -1,10 +1,18 @@
-import { IsEnum, IsInt, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { LocaleQueryDto } from '../../translations/locale.dto.js';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 import { ServiceStatus } from '../../generated/prisma/enums.js';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-export class UpdateServiceDto {
+export class UpdateServiceDto extends LocaleQueryDto {
   @IsOptional()
   @IsString()
   @MinLength(1)

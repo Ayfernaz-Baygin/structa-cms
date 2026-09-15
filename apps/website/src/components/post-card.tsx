@@ -1,9 +1,9 @@
-import Image from 'next/image';
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "@/components/locale-link";
 
-import type { Post } from '@/lib/api';
-import { formatAuthorName, formatDate } from '@/lib/format';
-import { resolveMediaUrl } from '@/lib/media';
+import type { Post } from "@/lib/api";
+import { formatAuthorName, formatDate } from "@/lib/format";
+import { resolveMediaUrl } from "@/lib/media";
 
 export function PostCard({ post }: { post: Post }) {
   const coverUrl = resolveMediaUrl(post.coverImage);
@@ -33,13 +33,23 @@ export function PostCard({ post }: { post: Post }) {
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-accent">
           {post.category?.name && <span>{post.category.name}</span>}
           {post.category?.name && date && <span className="text-muted">·</span>}
-          {date && <span className="text-muted normal-case tracking-normal">{date}</span>}
+          {date && (
+            <span className="text-muted normal-case tracking-normal">
+              {date}
+            </span>
+          )}
         </div>
         <h3 className="font-(family-name:--font-display) text-lg font-semibold text-foreground">
           {post.title}
         </h3>
-        {post.excerpt && <p className="line-clamp-2 text-sm leading-relaxed text-muted">{post.excerpt}</p>}
-        {author && <span className="mt-auto pt-2 text-xs text-muted">{author}</span>}
+        {post.excerpt && (
+          <p className="line-clamp-2 text-sm leading-relaxed text-muted">
+            {post.excerpt}
+          </p>
+        )}
+        {author && (
+          <span className="mt-auto pt-2 text-xs text-muted">{author}</span>
+        )}
       </div>
     </Link>
   );

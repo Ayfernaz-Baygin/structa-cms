@@ -1,3 +1,7 @@
+import { UseInterceptors } from '@nestjs/common';
+import { TranslationConflictInterceptor } from '../translations/translation-conflict.interceptor.js';
+import { Query } from '@nestjs/common';
+import { LocaleQueryDto } from '../translations/locale.dto.js';
 import {
   Body,
   Controller,
@@ -19,6 +23,7 @@ import { CreateProjectDto } from './dto/create-project.dto.js';
 import { UpdateProjectDto } from './dto/update-project.dto.js';
 import { ProjectsService } from './projects.service.js';
 
+@UseInterceptors(TranslationConflictInterceptor)
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
 @Controller('projects')
@@ -26,13 +31,13 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Get()
-  findAll() {
-    return this.projectsService.findAll();
+  findAll(@Query() query: LocaleQueryDto) {
+    return this.projectsService.findAll(query.locale);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.projectsService.findOne(id);
+  findOne(@Param('id') id: string, @Query() query: LocaleQueryDto) {
+    return this.projectsService.findOne(id, query.locale);
   }
 
   @Post()

@@ -1,3 +1,4 @@
+import { LocaleQueryDto } from '../../translations/locale.dto.js';
 import {
   IsDateString,
   IsEnum,
@@ -13,7 +14,7 @@ import { ProjectStatus } from '../../generated/prisma/enums.js';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-export class UpdateProjectDto {
+export class UpdateProjectDto extends LocaleQueryDto {
   @IsOptional()
   @IsString()
   @MinLength(1)

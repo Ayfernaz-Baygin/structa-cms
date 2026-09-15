@@ -1,10 +1,17 @@
-import { IsEnum, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { LocaleQueryDto } from '../../translations/locale.dto.js';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 import { PageStatus } from '../../generated/prisma/enums.js';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-export class UpdatePageDto {
+export class UpdatePageDto extends LocaleQueryDto {
   @IsOptional()
   @IsString()
   @MinLength(1)

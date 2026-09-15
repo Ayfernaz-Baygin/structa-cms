@@ -1,3 +1,4 @@
+import { LocaleQueryDto } from '../translations/locale.dto.js';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
 import { PublicListQueryDto } from './dto/public-list-query.dto.js';
@@ -8,23 +9,26 @@ export class PublicController {
   constructor(private readonly publicService: PublicService) {}
 
   @Get('settings')
-  getSettings() {
-    return this.publicService.getSettings();
+  getSettings(@Query() query: LocaleQueryDto) {
+    return this.publicService.getSettings(query.locale);
   }
 
   @Get('menus')
-  getMenus() {
-    return this.publicService.getMenus();
+  getMenus(@Query() query: LocaleQueryDto) {
+    return this.publicService.getMenus(query.locale);
   }
 
   @Get('menus/:location')
-  getMenuByLocation(@Param('location') location: string) {
-    return this.publicService.getMenuByLocation(location);
+  getMenuByLocation(
+    @Param('location') location: string,
+    @Query() query: LocaleQueryDto,
+  ) {
+    return this.publicService.getMenuByLocation(location, query.locale);
   }
 
   @Get('pages/:slug')
-  getPageBySlug(@Param('slug') slug: string) {
-    return this.publicService.getPageBySlug(slug);
+  getPageBySlug(@Param('slug') slug: string, @Query() query: LocaleQueryDto) {
+    return this.publicService.getPageBySlug(slug, query.locale);
   }
 
   @Get('services')
@@ -33,8 +37,11 @@ export class PublicController {
   }
 
   @Get('services/:slug')
-  getServiceBySlug(@Param('slug') slug: string) {
-    return this.publicService.getServiceBySlug(slug);
+  getServiceBySlug(
+    @Param('slug') slug: string,
+    @Query() query: LocaleQueryDto,
+  ) {
+    return this.publicService.getServiceBySlug(slug, query.locale);
   }
 
   @Get('projects')
@@ -43,8 +50,11 @@ export class PublicController {
   }
 
   @Get('projects/:slug')
-  getProjectBySlug(@Param('slug') slug: string) {
-    return this.publicService.getProjectBySlug(slug);
+  getProjectBySlug(
+    @Param('slug') slug: string,
+    @Query() query: LocaleQueryDto,
+  ) {
+    return this.publicService.getProjectBySlug(slug, query.locale);
   }
 
   @Get('posts')
@@ -53,7 +63,7 @@ export class PublicController {
   }
 
   @Get('posts/:slug')
-  getPostBySlug(@Param('slug') slug: string) {
-    return this.publicService.getPostBySlug(slug);
+  getPostBySlug(@Param('slug') slug: string, @Query() query: LocaleQueryDto) {
+    return this.publicService.getPostBySlug(slug, query.locale);
   }
 }

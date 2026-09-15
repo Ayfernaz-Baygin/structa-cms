@@ -1,4 +1,11 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import { Locale } from '../generated/prisma/enums.js';
+import { localize } from '../translations/localize.js';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import type { CurrentUserPayload } from '../auth/current-user.decorator.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -18,6 +25,15 @@ const REVISION_CREATED_BY_SELECT = {
   lastName: true,
 } as const;
 
+interface RevisionTranslationSnapshot {
+  locale: Locale;
+  title: string;
+  slug: string;
+  body: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+}
+
 interface RevisionSectionSnapshot {
   type: SectionType;
   sortOrder: number;
@@ -28,14 +44,18 @@ interface RevisionSectionSnapshot {
 export class PagesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.page.findMany({
-      orderBy: { updatedAt: 'desc' },
-    });
+  findAll(locale: Locale = 'tr') {
+    return this.prisma.page
+      .findMany({
+        include: { translations: true },
+        orderBy: { updatedAt: 'desc' },
+      })
+      .then((rows) => rows.map((row) => localize(row, locale)));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, locale: Locale = 'tr') {
     const page = await this.prisma.page.findUnique({
+      include: { translations: true },
       where: { id },
     });
 
@@ -43,34 +63,64 @@ export class PagesService {
       throw new NotFoundException('Sayfa bulunamadı.');
     }
 
-    return page;
+    return localize(page, locale);
   }
 
   async create(dto: CreatePageDto) {
-    await this.ensureSlugAvailable(dto.slug);
+    await this.ensureSlugAvailable(dto.slug, dto.locale ?? 'tr');
 
     const status = dto.status ?? PageStatus.DRAFT;
 
-    return this.prisma.page.create({
-      data: {
-        title: dto.title,
-        slug: dto.slug,
-        body: dto.body,
-        status,
-        seoTitle: dto.seoTitle,
-        seoDescription: dto.seoDescription,
-        publishedAt: status === PageStatus.PUBLISHED ? new Date() : null,
-      },
-    });
+    return this.prisma.page
+      .create({
+        include: { translations: true },
+        data: {
+          translations: {
+            create: {
+              locale: dto.locale ?? 'tr',
+              title: dto.title,
+              slug: dto.slug,
+              body: dto.body,
+              seoTitle: dto.seoTitle,
+              seoDescription: dto.seoDescription,
+            },
+          },
+          title: dto.title,
+          slug: dto.slug,
+          body: dto.body,
+          status,
+          seoTitle: dto.seoTitle,
+          seoDescription: dto.seoDescription,
+          publishedAt: status === PageStatus.PUBLISHED ? new Date() : null,
+        },
+      })
+      .then((row) => localize(row, dto.locale ?? 'tr'));
   }
 
-  async update(id: string, dto: UpdatePageDto, currentUser: CurrentUserPayload) {
+  async update(
+    id: string,
+    dto: UpdatePageDto,
+    currentUser: CurrentUserPayload,
+  ) {
     const existing = await this.findOne(id);
 
-    if (dto.slug && dto.slug !== existing.slug) {
-      await this.ensureSlugAvailable(dto.slug);
+    if (dto.slug) {
+      await this.ensureSlugAvailable(dto.slug, dto.locale ?? 'tr', id);
     }
 
+    const locale = dto.locale ?? 'tr';
+    const source = existing.translations.find((t) => t.locale === locale);
+    const hasChanges = [
+      dto.title,
+      dto.slug,
+      dto.body,
+      dto.seoTitle,
+      dto.seoDescription,
+    ].some((value) => value !== undefined);
+    if (hasChanges && !source && (!dto.title || !dto.slug))
+      throw new BadRequestException(
+        'A new translation requires title and slug.',
+      );
     const nextStatus = dto.status ?? existing.status;
     const publishedAt =
       nextStatus === PageStatus.PUBLISHED && !existing.publishedAt
@@ -81,18 +131,49 @@ export class PagesService {
       // Snapshot the pre-update state (page + current sections) before mutating it.
       await this.snapshotRevision(tx, existing, currentUser.sub);
 
-      return tx.page.update({
-        where: { id },
-        data: {
-          title: dto.title,
-          slug: dto.slug,
-          body: dto.body,
-          status: dto.status,
-          seoTitle: dto.seoTitle,
-          seoDescription: dto.seoDescription,
-          publishedAt,
-        },
-      });
+      return tx.page
+        .update({
+          include: { translations: true },
+          where: { id },
+          data: {
+            translations: hasChanges
+              ? {
+                  upsert: {
+                    where: { pageId_locale: { pageId: id, locale } },
+                    create: {
+                      locale,
+                      title: dto.title ?? source?.title ?? existing.title,
+                      slug: dto.slug ?? source?.slug ?? existing.slug,
+                      body: dto.body !== undefined ? dto.body : source?.body,
+                      seoTitle:
+                        dto.seoTitle !== undefined
+                          ? dto.seoTitle
+                          : source?.seoTitle,
+                      seoDescription:
+                        dto.seoDescription !== undefined
+                          ? dto.seoDescription
+                          : source?.seoDescription,
+                    },
+                    update: {
+                      title: dto.title,
+                      slug: dto.slug,
+                      body: dto.body,
+                      seoTitle: dto.seoTitle,
+                      seoDescription: dto.seoDescription,
+                    },
+                  },
+                }
+              : undefined,
+            title: locale === 'tr' ? dto.title : undefined,
+            slug: locale === 'tr' ? dto.slug : undefined,
+            body: locale === 'tr' ? dto.body : undefined,
+            status: dto.status,
+            seoTitle: locale === 'tr' ? dto.seoTitle : undefined,
+            seoDescription: locale === 'tr' ? dto.seoDescription : undefined,
+            publishedAt,
+          },
+        })
+        .then((row) => localize(row, locale));
     });
   }
 
@@ -104,14 +185,16 @@ export class PagesService {
     });
   }
 
-  private async ensureSlugAvailable(slug: string) {
-    const existing = await this.prisma.page.findUnique({
-      where: { slug },
+  private async ensureSlugAvailable(
+    slug: string,
+    locale: Locale = 'tr',
+    excludeId?: string,
+  ) {
+    const existing = await this.prisma.pageTranslation.findUnique({
+      where: { locale_slug: { locale, slug } },
     });
-
-    if (existing) {
-      throw new ConflictException('Bu slug zaten kullanılıyor.');
-    }
+    if (existing && existing.pageId !== excludeId)
+      throw new ConflictException('Slug is already used in this locale.');
   }
 
   findSections(pageId: string) {
@@ -138,10 +221,16 @@ export class PagesService {
     return this.findSections(pageId);
   }
 
-  async updateSection(pageId: string, sectionId: string, dto: UpdatePageSectionDto) {
+  async updateSection(
+    pageId: string,
+    sectionId: string,
+    dto: UpdatePageSectionDto,
+  ) {
     const section = await this.findSectionOrThrow(pageId, sectionId);
 
-    const data = dto.data ? validateSectionData(section.type, dto.data) : undefined;
+    const data = dto.data
+      ? validateSectionData(section.type, dto.data)
+      : undefined;
 
     await this.prisma.pageSection.update({
       where: { id: section.id },
@@ -226,12 +315,32 @@ export class PagesService {
     return this.findRevisionOrThrow(pageId, revisionId);
   }
 
-  async restoreRevision(pageId: string, revisionId: string, currentUser: CurrentUserPayload) {
+  async restoreRevision(
+    pageId: string,
+    revisionId: string,
+    currentUser: CurrentUserPayload,
+  ) {
     const existing = await this.findOne(pageId);
     const revision = await this.findRevisionOrThrow(pageId, revisionId);
 
-    if (revision.slug !== existing.slug) {
-      await this.ensureSlugAvailable(revision.slug);
+    const translations = revision.translations as unknown as
+      RevisionTranslationSnapshot[] | null;
+    const restoredTranslations = translations ?? [
+      {
+        locale: Locale.tr,
+        title: revision.title,
+        slug: revision.slug,
+        body: revision.body,
+        seoTitle: revision.seoTitle,
+        seoDescription: revision.seoDescription,
+      },
+    ];
+    for (const translation of restoredTranslations) {
+      await this.ensureSlugAvailable(
+        translation.slug,
+        translation.locale,
+        pageId,
+      );
     }
 
     const publishedAt =
@@ -245,6 +354,7 @@ export class PagesService {
       await this.snapshotRevision(tx, existing, currentUser.sub);
 
       await tx.page.update({
+        include: { translations: true },
         where: { id: pageId },
         data: {
           title: revision.title,
@@ -257,9 +367,21 @@ export class PagesService {
         },
       });
 
+      // Old revisions only restore TR; new snapshots restore the complete locale set.
+      if (translations)
+        await tx.pageTranslation.deleteMany({ where: { pageId } });
+      for (const translation of restoredTranslations) {
+        await tx.pageTranslation.upsert({
+          where: { pageId_locale: { pageId, locale: translation.locale } },
+          create: { pageId, ...translation },
+          update: translation,
+        });
+      }
       await tx.pageSection.deleteMany({ where: { pageId } });
 
-      const sectionsSnapshot = (revision.sections as unknown as RevisionSectionSnapshot[] | null) ?? [];
+      const sectionsSnapshot =
+        (revision.sections as unknown as RevisionSectionSnapshot[] | null) ??
+        [];
 
       if (sectionsSnapshot.length > 0) {
         await tx.pageSection.createMany({
@@ -274,7 +396,10 @@ export class PagesService {
 
       return tx.page.findUnique({
         where: { id: pageId },
-        include: { sections: { orderBy: { sortOrder: 'asc' } } },
+        include: {
+          translations: true,
+          sections: { orderBy: { sortOrder: 'asc' } },
+        },
       });
     });
   }
@@ -298,6 +423,17 @@ export class PagesService {
       select: { type: true, sortOrder: true, data: true },
     });
 
+    const translations = await tx.pageTranslation.findMany({
+      where: { pageId: page.id },
+      select: {
+        locale: true,
+        title: true,
+        slug: true,
+        body: true,
+        seoTitle: true,
+        seoDescription: true,
+      },
+    });
     await tx.pageRevision.create({
       data: {
         pageId: page.id,
@@ -308,6 +444,7 @@ export class PagesService {
         seoTitle: page.seoTitle,
         seoDescription: page.seoDescription,
         sections: sections as unknown as Prisma.InputJsonValue,
+        translations: translations as unknown as Prisma.InputJsonValue,
         createdById,
       },
     });

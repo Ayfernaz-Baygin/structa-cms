@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-import { API_URL } from '@/lib/api';
-import { getAuthToken } from '@/lib/server-api';
+import { API_URL } from "@/lib/api";
+import { getAuthToken } from "@/lib/server-api";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -12,13 +12,16 @@ export async function GET(_request: Request, { params }: RouteParams) {
   const token = await getAuthToken();
 
   if (!token) {
-    return NextResponse.json({ message: 'Yetkisiz erişim.' }, { status: 401 });
+    return NextResponse.json({ message: "Yetkisiz erişim." }, { status: 401 });
   }
 
-  const response = await fetch(`${API_URL}/pages/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
+  const response = await fetch(
+    `${API_URL}/pages/${id}${new URL(_request.url).search}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    },
+  );
 
   const data = await response.json();
 
@@ -30,15 +33,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const token = await getAuthToken();
 
   if (!token) {
-    return NextResponse.json({ message: 'Yetkisiz erişim.' }, { status: 401 });
+    return NextResponse.json({ message: "Yetkisiz erişim." }, { status: 401 });
   }
 
   const body = await request.json();
 
   const response = await fetch(`${API_URL}/pages/${id}`, {
-    method: 'PATCH',
+    method: "PATCH",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
@@ -54,11 +57,11 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
   const token = await getAuthToken();
 
   if (!token) {
-    return NextResponse.json({ message: 'Yetkisiz erişim.' }, { status: 401 });
+    return NextResponse.json({ message: "Yetkisiz erişim." }, { status: 401 });
   }
 
   const response = await fetch(`${API_URL}/pages/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
 

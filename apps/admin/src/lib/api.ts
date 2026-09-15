@@ -1,6 +1,7 @@
-export const API_URL = process.env.API_URL ?? 'http://localhost:4000';
+import type { ContentTranslation } from "./content-translations";
+export const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
-export const AUTH_COOKIE_NAME = 'structa_access_token';
+export const AUTH_COOKIE_NAME = "structa_access_token";
 
 export interface AuthUser {
   id: string;
@@ -10,7 +11,7 @@ export interface AuthUser {
   role: string;
 }
 
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "AUTHOR";
 
 export interface ManagedUser {
   id: string;
@@ -23,9 +24,10 @@ export interface ManagedUser {
   updatedAt: string;
 }
 
-export type PageStatus = 'DRAFT' | 'PUBLISHED';
+export type PageStatus = "DRAFT" | "PUBLISHED";
 
 export interface Page {
+  translations?: ContentTranslation[];
   id: string;
   title: string;
   slug: string;
@@ -39,13 +41,7 @@ export interface Page {
 }
 
 export type SectionType =
-  | 'HERO'
-  | 'TEXT'
-  | 'IMAGE_TEXT'
-  | 'SERVICES'
-  | 'PROJECTS'
-  | 'POSTS'
-  | 'CTA';
+  "HERO" | "TEXT" | "IMAGE_TEXT" | "SERVICES" | "PROJECTS" | "POSTS" | "CTA";
 
 export interface HeroSectionData {
   title: string;
@@ -64,7 +60,7 @@ export interface ImageTextSectionData {
   title?: string;
   body: string;
   imageUrl: string;
-  imagePosition?: 'left' | 'right';
+  imagePosition?: "left" | "right";
 }
 
 export interface ListSectionData {
@@ -126,9 +122,10 @@ export interface PageRevisionDetail extends PageRevisionSummary {
   sections: PageRevisionSectionSnapshot[] | null;
 }
 
-export type ServiceStatus = 'DRAFT' | 'PUBLISHED';
+export type ServiceStatus = "DRAFT" | "PUBLISHED";
 
 export interface Service {
+  translations?: ContentTranslation[];
   id: string;
   title: string;
   slug: string;
@@ -162,9 +159,10 @@ export interface ProjectImage {
   createdAt: string;
 }
 
-export type ProjectStatus = 'DRAFT' | 'PUBLISHED';
+export type ProjectStatus = "DRAFT" | "PUBLISHED";
 
 export interface Project {
+  translations?: ContentTranslation[];
   id: string;
   title: string;
   slug: string;
@@ -201,9 +199,10 @@ export interface PostAuthor {
   lastName: string | null;
 }
 
-export type PostStatus = 'DRAFT' | 'PUBLISHED';
+export type PostStatus = "DRAFT" | "PUBLISHED";
 
 export interface Post {
+  translations?: ContentTranslation[];
   id: string;
   title: string;
   slug: string;
@@ -260,7 +259,7 @@ export interface MediaListResponse {
   pagination: MediaPagination;
 }
 
-export function getMediaUrl(media: Pick<Media, 'url'>): string {
+export function getMediaUrl(media: Pick<Media, "url">): string {
   return `${API_URL}${media.url}`;
 }
 
@@ -269,7 +268,9 @@ export function getMediaUrl(media: Pick<Media, 'url'>): string {
  * backend-relative (e.g. "/uploads/images/x.jpg") — this resolves either to
  * something browsable for previews, without touching the stored value itself.
  */
-export function resolveFieldImageUrl(url: string | null | undefined): string | null {
+export function resolveFieldImageUrl(
+  url: string | null | undefined,
+): string | null {
   if (!url || url.trim().length === 0) {
     return null;
   }
@@ -278,7 +279,7 @@ export function resolveFieldImageUrl(url: string | null | undefined): string | n
     return url;
   }
 
-  return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  return `${API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 export interface SiteSettings {
@@ -303,8 +304,8 @@ export interface SiteSettings {
   updatedAt: string;
 }
 
-export type MenuLocation = 'HEADER' | 'FOOTER';
-export type MenuItemTarget = 'SELF' | 'BLANK';
+export type MenuLocation = "HEADER" | "FOOTER";
+export type MenuItemTarget = "SELF" | "BLANK";
 
 export interface MenuItem {
   id: string;

@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { FormEvent, useState } from 'react';
+import Link from "next/link";
+import { useContentTranslations } from "@/lib/content-translations";
+import { LocaleTabs } from "./locale-tabs";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 
-import type { Service, ServiceStatus } from '@/lib/api';
-import { slugify } from '@/lib/slug';
+import type { Service, ServiceStatus } from "@/lib/api";
+import { slugify } from "@/lib/slug";
 
-import { MediaPicker } from './media-picker';
+import { MediaPicker } from "./media-picker";
 
 interface ServiceFormProps {
   initialService?: Service;
@@ -16,22 +18,38 @@ interface ServiceFormProps {
 export function ServiceForm({ initialService }: ServiceFormProps) {
   const router = useRouter();
   const isEdit = Boolean(initialService);
+  const translation = useContentTranslations(initialService, [
+    "title",
+    "slug",
+    "shortDescription",
+    "description",
+    "seoTitle",
+    "seoDescription",
+  ]);
+  const { locale } = translation;
 
-  const [title, setTitle] = useState(initialService?.title ?? '');
-  const [slug, setSlug] = useState(initialService?.slug ?? '');
-  const [slugTouched, setSlugTouched] = useState(isEdit);
+  const [title, setTitle] = translation.field("title");
+  const [slug, setSlug] = translation.field("slug");
+  const [slugTouched, setSlugTouched] = translation.slugState;
   const [shortDescription, setShortDescription] = useState(
-    initialService?.shortDescription ?? '',
+    initialService?.shortDescription ?? "",
   );
-  const [description, setDescription] = useState(initialService?.description ?? '');
-  const [icon, setIcon] = useState(initialService?.icon ?? '');
-  const [coverImage, setCoverImage] = useState(initialService?.coverImage ?? '');
-  const [sortOrder, setSortOrder] = useState(String(initialService?.sortOrder ?? 0));
-  const [status, setStatus] = useState<ServiceStatus>(initialService?.status ?? 'DRAFT');
-  const [seoTitle, setSeoTitle] = useState(initialService?.seoTitle ?? '');
-  const [seoDescription, setSeoDescription] = useState(initialService?.seoDescription ?? '');
+  const [description, setDescription] = translation.field("description");
+  const [icon, setIcon] = useState(initialService?.icon ?? "");
+  const [coverImage, setCoverImage] = useState(
+    initialService?.coverImage ?? "",
+  );
+  const [sortOrder, setSortOrder] = useState(
+    String(initialService?.sortOrder ?? 0),
+  );
+  const [status, setStatus] = useState<ServiceStatus>(
+    initialService?.status ?? "DRAFT",
+  );
+  const [seoTitle, setSeoTitle] = translation.field("seoTitle");
+  const [seoDescription, setSeoDescription] =
+    translation.field("seoDescription");
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   function handleTitleChange(value: string) {
@@ -55,29 +73,30 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    setError('');
+    setError("");
 
     const parsedSortOrder = Number.parseInt(sortOrder, 10);
 
     const payload = {
+      locale,
       title,
       slug,
-      shortDescription: shortDescription.trim().length > 0 ? shortDescription : undefined,
-      description: description.trim().length > 0 ? description : undefined,
+      shortDescription,
+      description,
       icon: icon.trim().length > 0 ? icon : undefined,
       coverImage: coverImage.trim().length > 0 ? coverImage : undefined,
       status,
       sortOrder: Number.isNaN(parsedSortOrder) ? 0 : parsedSortOrder,
-      seoTitle: seoTitle.trim().length > 0 ? seoTitle : undefined,
-      seoDescription: seoDescription.trim().length > 0 ? seoDescription : undefined,
+      seoTitle,
+      seoDescription,
     };
 
     try {
-      const response = await fetch(
-        isEdit ? `/api/services/${initialService!.id}` : '/api/services',
+      const response = await translation.save(
+        isEdit ? `/api/services/${initialService!.id}` : "/api/services",
         {
-          method: isEdit ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: isEdit ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
       );
@@ -86,22 +105,22 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
 
       if (!response.ok) {
         if (response.status === 409) {
-          setError('Bu slug zaten kullanılıyor. Lütfen farklı bir slug girin.');
+          setError("Bu slug zaten kullanılıyor. Lütfen farklı bir slug girin.");
         } else if (response.status === 400 && data) {
           const message = Array.isArray(data.message)
-            ? data.message.join(' ')
+            ? data.message.join(" ")
             : data.message;
-          setError(message ?? 'Girdiğiniz bilgiler geçersiz.');
+          setError(message ?? "Girdiğiniz bilgiler geçersiz.");
         } else {
-          setError(data?.message ?? 'Hizmet kaydedilemedi.');
+          setError(data?.message ?? "Hizmet kaydedilemedi.");
         }
         return;
       }
 
-      router.push('/services');
+      router.push("/services");
       router.refresh();
     } catch {
-      setError('Sunucuya bağlanılamadı.');
+      setError("Sunucuya bağlanılamadı.");
     } finally {
       setSaving(false);
     }
@@ -109,11 +128,19 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <LocaleTabs
+        locale={locale}
+        onChange={translation.setLocale}
+        disabled={saving}
+      />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
             <div>
-              <label htmlFor="title" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="title"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Başlık
               </label>
               <input
@@ -128,7 +155,10 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
 
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between">
-                <label htmlFor="slug" className="block text-sm font-medium text-zinc-300">
+                <label
+                  htmlFor="slug"
+                  className="block text-sm font-medium text-zinc-300"
+                >
                   Slug
                 </label>
                 <button
@@ -168,7 +198,10 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
             </div>
 
             <div className="mt-5">
-              <label htmlFor="description" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="description"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Açıklama
               </label>
               <textarea
@@ -185,7 +218,10 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
             <h2 className="text-sm font-semibold text-white">SEO</h2>
 
             <div className="mt-4">
-              <label htmlFor="seoTitle" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="seoTitle"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 SEO Başlığı
               </label>
               <input
@@ -217,13 +253,18 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <label htmlFor="status" className="mb-2 block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="status"
+              className="mb-2 block text-sm font-medium text-zinc-300"
+            >
               Durum
             </label>
             <select
               id="status"
               value={status}
-              onChange={(event) => setStatus(event.target.value as ServiceStatus)}
+              onChange={(event) =>
+                setStatus(event.target.value as ServiceStatus)
+              }
               className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
             >
               <option value="DRAFT">Taslak</option>
@@ -231,7 +272,10 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
             </select>
 
             <div className="mt-5">
-              <label htmlFor="sortOrder" className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                htmlFor="sortOrder"
+                className="mb-2 block text-sm font-medium text-zinc-300"
+              >
                 Sıralama
               </label>
               <input
@@ -246,7 +290,10 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
           </div>
 
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <label htmlFor="icon" className="mb-2 block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="icon"
+              className="mb-2 block text-sm font-medium text-zinc-300"
+            >
               İkon
             </label>
             <input
@@ -282,7 +329,11 @@ export function ServiceForm({ initialService }: ServiceFormProps) {
           disabled={saving}
           className="rounded-xl bg-indigo-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? 'Kaydediliyor...' : isEdit ? 'Değişiklikleri Kaydet' : 'Hizmeti Oluştur'}
+          {saving
+            ? "Kaydediliyor..."
+            : isEdit
+              ? "Değişiklikleri Kaydet"
+              : "Hizmeti Oluştur"}
         </button>
 
         <Link
