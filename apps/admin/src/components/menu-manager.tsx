@@ -3,10 +3,22 @@
 import { FormEvent, useEffect, useState } from 'react';
 
 import type { Menu, MenuItem, MenuItemTarget, MenuLocation } from '@/lib/api';
+import { LocaleTabs } from '@/components/locale-tabs';
+import type { Locale } from '@/lib/content-translations';
+
+/** Current-locale label with tr fallback — mirrors the public API's localizeMenu(). */
+function localizedLabel(item: MenuItem, locale: Locale) {
+  return (
+    item.translations?.find((t) => t.locale === locale)?.label ??
+    item.translations?.find((t) => t.locale === 'tr')?.label ??
+    item.label
+  );
+}
 
 export function MenuManager() {
   const [menus, setMenus] = useState<Menu[] | null>(null);
   const [error, setError] = useState('');
+  const [locale, setLocale] = useState<Locale>('tr');
 
   useEffect(() => {
     void loadMenus();
@@ -35,9 +47,14 @@ export function MenuManager() {
 
   return (
     <div>
-      <p className="text-sm font-medium text-indigo-400">Structa CMS</p>
-      <h1 className="mt-2 text-3xl font-semibold">Menüler</h1>
-      <p className="mt-2 text-zinc-400">Header ve footer menülerini oluşturun ve sıralayın.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-indigo-400">Structa CMS</p>
+          <h1 className="mt-2 text-3xl font-semibold">Menüler</h1>
+          <p className="mt-2 text-zinc-400">Header ve footer menülerini oluşturun ve sıralayın.</p>
+        </div>
+        <LocaleTabs locale={locale} onChange={setLocale} />
+      </div>
 
       {error && (
         <div className="mt-6 rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300">
@@ -51,8 +68,8 @@ export function MenuManager() {
         </div>
       ) : (
         <div className="mt-8 space-y-8">
-          <MenuSection title="Header Menu" location="HEADER" menu={headerMenu} onChange={loadMenus} />
-          <MenuSection title="Footer Menu" location="FOOTER" menu={footerMenu} onChange={loadMenus} />
+          <MenuSection title="Header Menu" location="HEADER" menu={headerMenu} locale={locale} onChange={loadMenus} />
+          <MenuSection title="Footer Menu" location="FOOTER" menu={footerMenu} locale={locale} onChange={loadMenus} />
         </div>
       )}
     </div>
@@ -63,11 +80,13 @@ function MenuSection({
   title,
   location,
   menu,
+  locale,
   onChange,
 }: {
   title: string;
   location: MenuLocation;
   menu: Menu | null;
+  locale: Locale;
   onChange: () => void;
 }) {
   const [creating, setCreating] = useState(false);
@@ -121,13 +140,13 @@ function MenuSection({
           </button>
         </div>
       ) : (
-        <MenuEditor menu={menu} onChange={onChange} />
+        <MenuEditor menu={menu} locale={locale} onChange={onChange} />
       )}
     </div>
   );
 }
 
-function MenuEditor({ menu, onChange }: { menu: Menu; onChange: () => void }) {
+function MenuEditor({ menu, locale, onChange }: { menu: Menu; locale: Locale; onChange: () => void }) {
   const [label, setLabel] = useState('');
   const [url, setUrl] = useState('');
   const [target, setTarget] = useState<MenuItemTarget>('SELF');
@@ -162,6 +181,7 @@ function MenuEditor({ menu, onChange }: { menu: Menu; onChange: () => void }) {
           url,
           target,
           parentId: parentId.length > 0 ? parentId : undefined,
+          locale,
         }),
       });
 
@@ -186,7 +206,7 @@ function MenuEditor({ menu, onChange }: { menu: Menu; onChange: () => void }) {
 
   function startEdit(item: MenuItem) {
     setEditingId(item.id);
-    setEditLabel(item.label);
+    setEditLabel(item.translations?.find((t) => t.locale === locale)?.label ?? (locale === 'tr' ? item.label : ''));
     setEditUrl(item.url);
     setEditTarget(item.target);
     setEditParentId(item.parentId ?? '');
@@ -205,6 +225,7 @@ function MenuEditor({ menu, onChange }: { menu: Menu; onChange: () => void }) {
           url: editUrl,
           target: editTarget,
           parentId: editParentId.length > 0 ? editParentId : null,
+          locale,
         }),
       });
 
@@ -319,7 +340,7 @@ function MenuEditor({ menu, onChange }: { menu: Menu; onChange: () => void }) {
           <option value="">Üst öğe yok</option>
           {topLevelItems.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.label}
+              {localizedLabel(item, locale)}
             </option>
           ))}
         </select>
@@ -360,6 +381,7 @@ function MenuEditor({ menu, onChange }: { menu: Menu; onChange: () => void }) {
                   item={item}
                   index={index}
                   topLevelItems={topLevelItems}
+                  locale={locale}
                   editingId={editingId}
                   editLabel={editLabel}
                   editUrl={editUrl}
@@ -394,6 +416,7 @@ interface MenuItemRowGroupProps {
   item: Menu['items'][number];
   index: number;
   topLevelItems: Menu['items'];
+  locale: Locale;
   editingId: string | null;
   editLabel: string;
   editUrl: string;
@@ -420,6 +443,7 @@ function MenuItemRowGroup({
   item,
   index,
   topLevelItems,
+  locale,
   editingId,
   editLabel,
   editUrl,
@@ -449,6 +473,7 @@ function MenuItemRowGroup({
         item={item}
         depth={0}
         parentLabel={null}
+        locale={locale}
         isEditing={editingId === item.id}
         editLabel={editLabel}
         editUrl={editUrl}
@@ -480,7 +505,8 @@ function MenuItemRowGroup({
           key={child.id}
           item={child}
           depth={1}
-          parentLabel={item.label}
+          parentLabel={localizedLabel(item, locale)}
+          locale={locale}
           isEditing={editingId === child.id}
           editLabel={editLabel}
           editUrl={editUrl}
@@ -515,6 +541,7 @@ interface MenuItemRowProps {
   item: MenuItem;
   depth: number;
   parentLabel: string | null;
+  locale: Locale;
   isEditing: boolean;
   editLabel: string;
   editUrl: string;
@@ -545,6 +572,7 @@ function MenuItemRow({
   item,
   depth,
   parentLabel,
+  locale,
   isEditing,
   editLabel,
   editUrl,
@@ -612,7 +640,7 @@ function MenuItemRow({
                 <option value="">Üst öğe yok</option>
                 {parentOptions.map((option) => (
                   <option key={option.id} value={option.id}>
-                    {option.label}
+                    {localizedLabel(option, locale)}
                   </option>
                 ))}
               </select>
@@ -643,7 +671,7 @@ function MenuItemRow({
       <td className="px-4 py-3 text-white">
         <span style={{ paddingLeft: depth * 20 }} className="inline-flex items-center">
           {depth > 0 && <span className="mr-1.5 text-zinc-600">└</span>}
-          {item.label}
+          {localizedLabel(item, locale)}
         </span>
       </td>
       <td className="px-4 py-3 font-mono text-xs text-zinc-400">{item.url}</td>

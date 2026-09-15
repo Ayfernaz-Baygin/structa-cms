@@ -1,8 +1,9 @@
+import { LocaleQueryDto } from '../../translations/locale.dto.js';
 import { IsEnum, IsInt, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 
 import { MenuItemTarget } from '../../generated/prisma/enums.js';
 
-export class UpdateMenuItemDto {
+export class UpdateMenuItemDto extends LocaleQueryDto {
   @IsOptional()
   @IsString()
   @MinLength(1)

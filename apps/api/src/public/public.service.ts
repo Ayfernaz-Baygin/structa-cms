@@ -1,5 +1,5 @@
 import { Locale } from '../generated/prisma/enums.js';
-import { localize, translationWhere } from '../translations/localize.js';
+import { localize, localizeSettings, translationWhere } from '../translations/localize.js';
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import {
@@ -19,8 +19,10 @@ const MENU_INCLUDE = {
     where: { parentId: null },
     orderBy: { sortOrder: 'asc' as const },
     include: {
+      translations: true,
       children: {
         orderBy: { sortOrder: 'asc' as const },
+        include: { translations: true },
       },
     },
   },
@@ -56,11 +58,12 @@ export class PublicService {
         update: {},
         create: { id: SETTINGS_ID },
         include: {
+          translations: true,
           homePage: { include: { translations: true } },
         },
       })
       .then((settings) => ({
-        ...settings,
+        ...localizeSettings(settings, locale),
         homePage:
           settings.homePage && settings.homePage.status === 'PUBLISHED'
             ? (() => {
@@ -100,9 +103,27 @@ export class PublicService {
   }
 
   private async localizeMenu<
-    T extends { items: { url: string; children: { url: string }[] }[] },
+    T extends {
+      items: {
+        label: string;
+        url: string;
+        translations: { locale: Locale; label: string }[];
+        children: {
+          label: string;
+          url: string;
+          translations: { locale: Locale; label: string }[];
+        }[];
+      }[];
+    },
   >(menu: T, locale: Locale) {
     if (locale === 'tr') return menu;
+    const localizeLabel = (item: {
+      label: string;
+      translations: { locale: Locale; label: string }[];
+    }) =>
+      item.translations.find((t) => t.locale === locale)?.label ??
+      item.translations.find((t) => t.locale === Locale.tr)?.label ??
+      item.label;
     const localizeUrl = async (url: string) => {
       if (
         !url.startsWith('/') ||
@@ -155,10 +176,12 @@ export class PublicService {
       items: await Promise.all(
         menu.items.map(async (item) => ({
           ...item,
+          label: localizeLabel(item),
           url: await localizeUrl(item.url),
           children: await Promise.all(
             item.children.map(async (child) => ({
               ...child,
+              label: localizeLabel(child),
               url: await localizeUrl(child.url),
             })),
           ),

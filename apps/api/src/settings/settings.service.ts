@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { PageStatus } from '../generated/prisma/enums.js';
+import { Locale, PageStatus } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { localizeSettings } from '../translations/localize.js';
 import { UpdateSettingsDto } from './dto/update-settings.dto.js';
 
 const SETTINGS_ID = 'singleton';
@@ -10,12 +11,15 @@ const SETTINGS_ID = 'singleton';
 export class SettingsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findOrCreate() {
-    return this.prisma.siteSettings.upsert({
+  async findOrCreate(locale: Locale = Locale.tr) {
+    const settings = await this.prisma.siteSettings.upsert({
       where: { id: SETTINGS_ID },
       update: {},
       create: { id: SETTINGS_ID },
+      include: { translations: true },
     });
+
+    return localizeSettings(settings, locale);
   }
 
   async update(dto: UpdateSettingsDto) {
@@ -25,10 +29,34 @@ export class SettingsService {
       await this.ensureHomePageExists(dto.homePageId);
     }
 
-    return this.prisma.siteSettings.update({
+    const locale = dto.locale ?? Locale.tr;
+    const { locale: _locale, siteName, siteDescription, footerText, address, ...technicalFields } = dto;
+    const hasTranslatedChanges = [siteName, siteDescription, footerText, address].some(
+      (value) => value !== undefined,
+    );
+
+    const settings = await this.prisma.siteSettings.update({
       where: { id: SETTINGS_ID },
-      data: dto,
+      data: {
+        ...technicalFields,
+        translations: hasTranslatedChanges
+          ? {
+              upsert: {
+                where: { siteSettingsId_locale: { siteSettingsId: SETTINGS_ID, locale } },
+                create: { locale, siteName, siteDescription, footerText, address },
+                update: { siteName, siteDescription, footerText, address },
+              },
+            }
+          : undefined,
+        siteName: locale === Locale.tr ? siteName : undefined,
+        siteDescription: locale === Locale.tr ? siteDescription : undefined,
+        footerText: locale === Locale.tr ? footerText : undefined,
+        address: locale === Locale.tr ? address : undefined,
+      },
+      include: { translations: true },
     });
+
+    return localizeSettings(settings, locale);
   }
 
   private async ensureHomePageExists(pageId: string) {

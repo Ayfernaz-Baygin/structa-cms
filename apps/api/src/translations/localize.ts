@@ -42,6 +42,33 @@ export function localize<T extends { translations: Translation[] }>(
   };
 }
 
+type SettingsTranslation = {
+  locale: Locale;
+  siteName: string | null;
+  siteDescription: string | null;
+  footerText: string | null;
+  address: string | null;
+};
+
+/** Same locale-with-tr-fallback strategy as localize(), for the SiteSettings singleton. */
+export function localizeSettings<T extends { translations: SettingsTranslation[] }>(
+  settings: T,
+  locale: Locale = 'tr',
+) {
+  const translation =
+    settings.translations.find((t) => t.locale === locale) ??
+    settings.translations.find((t) => t.locale === 'tr');
+  return {
+    ...settings,
+    siteName: translation?.siteName ?? null,
+    siteDescription: translation?.siteDescription ?? null,
+    footerText: translation?.footerText ?? null,
+    address: translation?.address ?? null,
+    locale,
+    translationLocale: translation?.locale ?? null,
+  };
+}
+
 export function translationWhere(locale: Locale, slug?: string) {
   return {
     OR: [

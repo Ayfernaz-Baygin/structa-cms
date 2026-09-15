@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { MenuItemTarget } from '../generated/prisma/enums.js';
+import { Locale, MenuItemTarget } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateMenuItemDto } from './dto/create-menu-item.dto.js';
 import { CreateMenuDto } from './dto/create-menu.dto.js';
@@ -13,8 +13,10 @@ const MENU_INCLUDE = {
     where: { parentId: null },
     orderBy: { sortOrder: 'asc' as const },
     include: {
+      translations: true,
       children: {
         orderBy: { sortOrder: 'asc' as const },
+        include: { translations: true },
       },
     },
   },
@@ -88,6 +90,8 @@ export class MenusService {
       await this.ensureValidParent(menuId, dto.parentId);
     }
 
+    const locale = dto.locale ?? Locale.tr;
+
     await this.prisma.menuItem.create({
       data: {
         menuId,
@@ -96,6 +100,9 @@ export class MenusService {
         target: dto.target ?? MenuItemTarget.SELF,
         sortOrder: dto.sortOrder ?? 0,
         parentId: dto.parentId ?? null,
+        translations: {
+          create: { locale, label: dto.label },
+        },
       },
     });
 
@@ -120,14 +127,33 @@ export class MenusService {
       await this.ensureValidParent(menuId, dto.parentId);
     }
 
+    const locale = dto.locale ?? Locale.tr;
+    const source = await this.prisma.menuItemTranslation.findUnique({
+      where: { menuItemId_locale: { menuItemId: itemId, locale } },
+    });
+
+    if (dto.label !== undefined && !source && !dto.label) {
+      throw new BadRequestException('A new translation requires a label.');
+    }
+
     await this.prisma.menuItem.update({
       where: { id: item.id },
       data: {
-        label: dto.label,
+        label: locale === Locale.tr ? dto.label : undefined,
         url: dto.url,
         target: dto.target,
         sortOrder: dto.sortOrder,
         parentId: dto.parentId,
+        translations:
+          dto.label !== undefined
+            ? {
+                upsert: {
+                  where: { menuItemId_locale: { menuItemId: itemId, locale } },
+                  create: { locale, label: dto.label },
+                  update: { label: dto.label },
+                },
+              }
+            : undefined,
       },
     });
 

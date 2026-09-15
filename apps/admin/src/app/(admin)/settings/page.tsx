@@ -1,65 +1,83 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 import type { Page, SiteSettings } from '@/lib/api';
 import { MediaPicker } from '@/components/media-picker';
+import { LocaleTabs } from '@/components/locale-tabs';
+import type { Locale } from '@/lib/content-translations';
 
-type FormState = Record<
-  | 'siteName'
-  | 'siteDescription'
+type SharedFormState = Record<
   | 'logoUrl'
   | 'faviconUrl'
   | 'email'
   | 'phone'
-  | 'address'
   | 'instagramUrl'
   | 'facebookUrl'
   | 'linkedinUrl'
   | 'youtubeUrl'
   | 'xUrl'
-  | 'footerText'
   | 'googleMapsUrl'
   | 'googleAnalyticsId',
   string
 >;
 
-const EMPTY_FORM: FormState = {
-  siteName: '',
-  siteDescription: '',
+type TranslatedFormState = Record<'siteName' | 'siteDescription' | 'footerText' | 'address', string>;
+
+const EMPTY_SHARED_FORM: SharedFormState = {
   logoUrl: '',
   faviconUrl: '',
   email: '',
   phone: '',
-  address: '',
   instagramUrl: '',
   facebookUrl: '',
   linkedinUrl: '',
   youtubeUrl: '',
   xUrl: '',
-  footerText: '',
   googleMapsUrl: '',
   googleAnalyticsId: '',
 };
 
-function toFormState(settings: SiteSettings): FormState {
+const EMPTY_TRANSLATED_FORM: TranslatedFormState = {
+  siteName: '',
+  siteDescription: '',
+  footerText: '',
+  address: '',
+};
+
+function toSharedForm(settings: SiteSettings): SharedFormState {
   return {
-    siteName: settings.siteName ?? '',
-    siteDescription: settings.siteDescription ?? '',
     logoUrl: settings.logoUrl ?? '',
     faviconUrl: settings.faviconUrl ?? '',
     email: settings.email ?? '',
     phone: settings.phone ?? '',
-    address: settings.address ?? '',
     instagramUrl: settings.instagramUrl ?? '',
     facebookUrl: settings.facebookUrl ?? '',
     linkedinUrl: settings.linkedinUrl ?? '',
     youtubeUrl: settings.youtubeUrl ?? '',
     xUrl: settings.xUrl ?? '',
-    footerText: settings.footerText ?? '',
     googleMapsUrl: settings.googleMapsUrl ?? '',
     googleAnalyticsId: settings.googleAnalyticsId ?? '',
   };
+}
+
+function toTranslatedDrafts(settings: SiteSettings): Record<Locale, TranslatedFormState> {
+  const read = (locale: Locale): TranslatedFormState => {
+    const translation = settings.translations?.find((t) => t.locale === locale);
+    // Falls back to the top-level (tr-mirrored) fields for tr when no translations array is present yet.
+    const fallback = locale === 'tr' ? settings : undefined;
+    return {
+      siteName: translation?.siteName ?? fallback?.siteName ?? '',
+      siteDescription: translation?.siteDescription ?? fallback?.siteDescription ?? '',
+      footerText: translation?.footerText ?? fallback?.footerText ?? '',
+      address: translation?.address ?? fallback?.address ?? '',
+    };
+  };
+  return { tr: read('tr'), en: read('en') };
+}
+
+function trimmedOrUndefined(value: string) {
+  return value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function Field({
@@ -71,7 +89,7 @@ function Field({
   textarea = false,
   placeholder,
 }: {
-  id: keyof FormState;
+  id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -107,17 +125,26 @@ function Field({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-white">{title}</h2>
+        {action}
+      </div>
       <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">{children}</div>
     </div>
   );
 }
 
 export default function SettingsPage() {
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [sharedForm, setSharedForm] = useState<SharedFormState>(EMPTY_SHARED_FORM);
+  const [translated, setTranslated] = useState<Record<Locale, TranslatedFormState>>({
+    tr: EMPTY_TRANSLATED_FORM,
+    en: EMPTY_TRANSLATED_FORM,
+  });
+  const [locale, setLocale] = useState<Locale>('tr');
+  const dirtyLocales = useRef(new Set<Locale>());
   const [homePageId, setHomePageId] = useState('');
   const [pages, setPages] = useState<Page[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,7 +171,9 @@ export default function SettingsPage() {
         throw new Error(data?.message ?? 'Ayarlar yüklenemedi.');
       }
 
-      setForm(toFormState(data));
+      setSharedForm(toSharedForm(data));
+      setTranslated(toTranslatedDrafts(data));
+      dirtyLocales.current.clear();
       setHomePageId((data as SiteSettings).homePageId ?? '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ayarlar yüklenemedi.');
@@ -163,9 +192,29 @@ export default function SettingsPage() {
     }
   }
 
-  function update(field: keyof FormState, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  function updateShared(field: keyof SharedFormState, value: string) {
+    setSharedForm((prev) => ({ ...prev, [field]: value }));
     setSuccess(false);
+  }
+
+  function updateTranslated(field: keyof TranslatedFormState, value: string) {
+    dirtyLocales.current.add(locale);
+    setTranslated((prev) => ({ ...prev, [locale]: { ...prev[locale], [field]: value } }));
+    setSuccess(false);
+  }
+
+  async function patchSettings(body: Record<string, unknown>) {
+    const response = await fetch('/api/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = Array.isArray(data?.message) ? data.message.join(' ') : data?.message;
+      throw new Error(message ?? 'Ayarlar kaydedilemedi.');
+    }
+    return data;
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -174,32 +223,37 @@ export default function SettingsPage() {
     setError('');
     setSuccess(false);
 
-    const payload = {
-      ...Object.fromEntries(
-        Object.entries(form).map(([key, value]) => [
-          key,
-          value.trim().length > 0 ? value.trim() : undefined,
-        ]),
-      ),
-      homePageId: homePageId.length > 0 ? homePageId : null,
-    };
+    dirtyLocales.current.add(locale);
+
+    const sharedPayload = Object.fromEntries(
+      Object.entries(sharedForm).map(([key, value]) => [key, trimmedOrUndefined(value)]),
+    );
 
     try {
-      const response = await fetch('/api/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      await patchSettings({
+        ...sharedPayload,
+        homePageId: homePageId.length > 0 ? homePageId : null,
+        locale,
+        siteName: trimmedOrUndefined(translated[locale].siteName),
+        siteDescription: trimmedOrUndefined(translated[locale].siteDescription),
+        footerText: trimmedOrUndefined(translated[locale].footerText),
+        address: trimmedOrUndefined(translated[locale].address),
       });
+      dirtyLocales.current.delete(locale);
 
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const message = Array.isArray(data?.message) ? data.message.join(' ') : data?.message;
-        throw new Error(message ?? 'Ayarlar kaydedilemedi.');
+      const otherLocale: Locale = locale === 'tr' ? 'en' : 'tr';
+      if (dirtyLocales.current.has(otherLocale)) {
+        await patchSettings({
+          locale: otherLocale,
+          siteName: trimmedOrUndefined(translated[otherLocale].siteName),
+          siteDescription: trimmedOrUndefined(translated[otherLocale].siteDescription),
+          footerText: trimmedOrUndefined(translated[otherLocale].footerText),
+          address: trimmedOrUndefined(translated[otherLocale].address),
+        });
+        dirtyLocales.current.delete(otherLocale);
       }
 
-      setForm(toFormState(data));
-      setHomePageId((data as SiteSettings).homePageId ?? '');
+      await loadSettings();
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ayarlar kaydedilemedi.');
@@ -220,25 +274,33 @@ export default function SettingsPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <Section title="Genel">
-            <Field id="siteName" label="Site Adı" value={form.siteName} onChange={(v) => update('siteName', v)} />
+          <Section
+            title="Genel"
+            action={<LocaleTabs locale={locale} onChange={setLocale} disabled={saving} />}
+          >
+            <Field
+              id="siteName"
+              label="Site Adı"
+              value={translated[locale].siteName}
+              onChange={(v) => updateTranslated('siteName', v)}
+            />
             <Field
               id="siteDescription"
               label="Site Açıklaması"
-              value={form.siteDescription}
-              onChange={(v) => update('siteDescription', v)}
+              value={translated[locale].siteDescription}
+              onChange={(v) => updateTranslated('siteDescription', v)}
               textarea
             />
             <MediaPicker
               label="Logo"
-              value={form.logoUrl}
-              onChange={(v) => update('logoUrl', v)}
+              value={sharedForm.logoUrl}
+              onChange={(v) => updateShared('logoUrl', v)}
               accept="image"
             />
             <MediaPicker
               label="Favicon"
-              value={form.faviconUrl}
-              onChange={(v) => update('faviconUrl', v)}
+              value={sharedForm.faviconUrl}
+              onChange={(v) => updateShared('faviconUrl', v)}
               accept="image"
             />
           </Section>
@@ -278,15 +340,24 @@ export default function SettingsPage() {
             </div>
           </Section>
 
-          <Section title="İletişim">
-            <Field id="email" label="E-posta" type="email" value={form.email} onChange={(v) => update('email', v)} />
-            <Field id="phone" label="Telefon" value={form.phone} onChange={(v) => update('phone', v)} />
-            <Field id="address" label="Adres" value={form.address} onChange={(v) => update('address', v)} textarea />
+          <Section
+            title="İletişim"
+            action={<LocaleTabs locale={locale} onChange={setLocale} disabled={saving} />}
+          >
+            <Field id="email" label="E-posta" type="email" value={sharedForm.email} onChange={(v) => updateShared('email', v)} />
+            <Field id="phone" label="Telefon" value={sharedForm.phone} onChange={(v) => updateShared('phone', v)} />
+            <Field
+              id="address"
+              label="Adres"
+              value={translated[locale].address}
+              onChange={(v) => updateTranslated('address', v)}
+              textarea
+            />
             <Field
               id="googleMapsUrl"
               label="Google Maps URL"
-              value={form.googleMapsUrl}
-              onChange={(v) => update('googleMapsUrl', v)}
+              value={sharedForm.googleMapsUrl}
+              onChange={(v) => updateShared('googleMapsUrl', v)}
               placeholder="https://..."
             />
           </Section>
@@ -295,46 +366,49 @@ export default function SettingsPage() {
             <Field
               id="instagramUrl"
               label="Instagram"
-              value={form.instagramUrl}
-              onChange={(v) => update('instagramUrl', v)}
+              value={sharedForm.instagramUrl}
+              onChange={(v) => updateShared('instagramUrl', v)}
               placeholder="https://instagram.com/..."
             />
             <Field
               id="facebookUrl"
               label="Facebook"
-              value={form.facebookUrl}
-              onChange={(v) => update('facebookUrl', v)}
+              value={sharedForm.facebookUrl}
+              onChange={(v) => updateShared('facebookUrl', v)}
               placeholder="https://facebook.com/..."
             />
             <Field
               id="linkedinUrl"
               label="LinkedIn"
-              value={form.linkedinUrl}
-              onChange={(v) => update('linkedinUrl', v)}
+              value={sharedForm.linkedinUrl}
+              onChange={(v) => updateShared('linkedinUrl', v)}
               placeholder="https://linkedin.com/..."
             />
             <Field
               id="youtubeUrl"
               label="YouTube"
-              value={form.youtubeUrl}
-              onChange={(v) => update('youtubeUrl', v)}
+              value={sharedForm.youtubeUrl}
+              onChange={(v) => updateShared('youtubeUrl', v)}
               placeholder="https://youtube.com/..."
             />
             <Field
               id="xUrl"
               label="X"
-              value={form.xUrl}
-              onChange={(v) => update('xUrl', v)}
+              value={sharedForm.xUrl}
+              onChange={(v) => updateShared('xUrl', v)}
               placeholder="https://x.com/..."
             />
           </Section>
 
-          <Section title="Footer">
+          <Section
+            title="Footer"
+            action={<LocaleTabs locale={locale} onChange={setLocale} disabled={saving} />}
+          >
             <Field
               id="footerText"
               label="Footer Metni"
-              value={form.footerText}
-              onChange={(v) => update('footerText', v)}
+              value={translated[locale].footerText}
+              onChange={(v) => updateTranslated('footerText', v)}
               textarea
             />
           </Section>
@@ -343,8 +417,8 @@ export default function SettingsPage() {
             <Field
               id="googleAnalyticsId"
               label="Google Analytics ID"
-              value={form.googleAnalyticsId}
-              onChange={(v) => update('googleAnalyticsId', v)}
+              value={sharedForm.googleAnalyticsId}
+              onChange={(v) => updateShared('googleAnalyticsId', v)}
               placeholder="G-XXXXXXXXXX"
             />
           </Section>

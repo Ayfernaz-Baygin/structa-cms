@@ -48,8 +48,8 @@ model User {
   role         UserRole @default(AUTHOR)
   isActive     Boolean  @default(true)
 
-  posts Post[]
-  media Media[]
+  posts         Post[]
+  media         Media[]
   pageRevisions PageRevision[]
   auditLogs     AuditLog[]
 
@@ -63,18 +63,18 @@ enum PageStatus {
 }
 
 model Page {
-  translations PageTranslation[]
-  id             String     @id @default(uuid())
+  translations   PageTranslation[]
+  id             String            @id @default(uuid())
   title          String
   slug           String
   body           String?
-  status         PageStatus @default(DRAFT)
+  status         PageStatus        @default(DRAFT)
   seoTitle       String?
   seoDescription String?
 
-  sections     PageSection[]
-  revisions    PageRevision[]
-  homePageFor  SiteSettings?
+  sections    PageSection[]
+  revisions   PageRevision[]
+  homePageFor SiteSettings?
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -86,7 +86,7 @@ model Page {
 // restore — stays recoverable. createdBy is SetNull (not Cascade) so the
 // audit trail survives even if the acting user's account is later removed.
 model PageRevision {
-  translations Json?
+  translations   Json?
   id             String     @id @default(uuid())
   title          String
   slug           String
@@ -136,16 +136,16 @@ enum ServiceStatus {
 }
 
 model Service {
-  translations ServiceTranslation[]
-  id               String        @id @default(uuid())
+  translations     ServiceTranslation[]
+  id               String               @id @default(uuid())
   title            String
   slug             String
   shortDescription String?
   description      String?
   icon             String?
   coverImage       String?
-  status           ServiceStatus @default(DRAFT)
-  sortOrder        Int           @default(0)
+  status           ServiceStatus        @default(DRAFT)
+  sortOrder        Int                  @default(0)
   seoTitle         String?
   seoDescription   String?
 
@@ -171,8 +171,8 @@ model ProjectCategory {
 }
 
 model Project {
-  translations ProjectTranslation[]
-  id               String        @id @default(uuid())
+  translations     ProjectTranslation[]
+  id               String               @id @default(uuid())
   title            String
   slug             String
   shortDescription String?
@@ -181,8 +181,8 @@ model Project {
   location         String?
   projectDate      DateTime?
   coverImage       String?
-  status           ProjectStatus @default(DRAFT)
-  sortOrder        Int           @default(0)
+  status           ProjectStatus        @default(DRAFT)
+  sortOrder        Int                  @default(0)
   seoTitle         String?
   seoDescription   String?
 
@@ -228,14 +228,14 @@ model PostCategory {
 }
 
 model Post {
-  translations PostTranslation[]
-  id             String        @id @default(uuid())
+  translations   PostTranslation[]
+  id             String            @id @default(uuid())
   title          String
   slug           String
   excerpt        String?
   content        String?
   coverImage     String?
-  status         ContentStatus @default(DRAFT)
+  status         ContentStatus     @default(DRAFT)
   seoTitle       String?
   seoDescription String?
 
@@ -297,6 +297,8 @@ model SiteSettings {
   homePageId String? @unique
   homePage   Page?   @relation(fields: [homePageId], references: [id], onDelete: SetNull)
 
+  translations SiteSettingsTranslation[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -336,10 +338,11 @@ model MenuItem {
   parent   MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children MenuItem[] @relation("MenuItemChildren")
 
+  translations MenuItemTranslation[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 
 enum Locale {
   tr
@@ -347,60 +350,87 @@ enum Locale {
 }
 
 model PageTranslation {
-  id String @id @default(uuid())
-  pageId String
-  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  locale Locale
-  title String
-  slug String
-  body String?
-  seoTitle String?
+  id             String  @id @default(uuid())
+  pageId         String
+  page           Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  locale         Locale
+  title          String
+  slug           String
+  body           String?
+  seoTitle       String?
   seoDescription String?
+
   @@unique([pageId, locale])
   @@unique([locale, slug])
 }
 
 model ServiceTranslation {
-  id String @id @default(uuid())
-  serviceId String
-  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  locale Locale
-  title String
-  slug String
+  id               String  @id @default(uuid())
+  serviceId        String
+  service          Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  locale           Locale
+  title            String
+  slug             String
   shortDescription String?
-  description String?
-  seoTitle String?
-  seoDescription String?
+  description      String?
+  seoTitle         String?
+  seoDescription   String?
+
   @@unique([serviceId, locale])
   @@unique([locale, slug])
 }
 
 model ProjectTranslation {
-  id String @id @default(uuid())
-  projectId String
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  locale Locale
-  title String
-  slug String
+  id               String  @id @default(uuid())
+  projectId        String
+  project          Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  locale           Locale
+  title            String
+  slug             String
   shortDescription String?
-  description String?
-  seoTitle String?
-  seoDescription String?
+  description      String?
+  seoTitle         String?
+  seoDescription   String?
+
   @@unique([projectId, locale])
   @@unique([locale, slug])
 }
 
 model PostTranslation {
-  id String @id @default(uuid())
-  postId String
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  locale Locale
-  title String
-  slug String
-  excerpt String?
-  content String?
-  seoTitle String?
+  id             String  @id @default(uuid())
+  postId         String
+  post           Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  locale         Locale
+  title          String
+  slug           String
+  excerpt        String?
+  content        String?
+  seoTitle       String?
   seoDescription String?
+
   @@unique([postId, locale])
   @@unique([locale, slug])
+}
+
+model SiteSettingsTranslation {
+  id              String       @id @default(uuid())
+  siteSettingsId  String
+  siteSettings    SiteSettings @relation(fields: [siteSettingsId], references: [id], onDelete: Cascade)
+  locale          Locale
+  siteName        String?
+  siteDescription String?
+  footerText      String?
+  address         String?
+
+  @@unique([siteSettingsId, locale])
+}
+
+model MenuItemTranslation {
+  id         String   @id @default(uuid())
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  locale     Locale
+  label      String
+
+  @@unique([menuItemId, locale])
 }

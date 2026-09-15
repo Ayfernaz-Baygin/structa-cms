@@ -1,3 +1,4 @@
+import { LocaleQueryDto } from '../../translations/locale.dto.js';
 import { IsEmail, IsOptional, IsString, IsUrl, IsUUID, Matches, ValidateIf } from 'class-validator';
 
 // logoUrl/faviconUrl can be picked from the Media Library, which stores a
@@ -6,7 +7,7 @@ import { IsEmail, IsOptional, IsString, IsUrl, IsUUID, Matches, ValidateIf } fro
 const RELATIVE_OR_ABSOLUTE_URL = /^(https?:\/\/\S+|\/\S+)$/;
 const RELATIVE_OR_ABSOLUTE_URL_MESSAGE = 'Geçerli bir URL veya /uploads/... yolu giriniz.';
 
-export class UpdateSettingsDto {
+export class UpdateSettingsDto extends LocaleQueryDto {
   @IsOptional()
   @IsString()
   siteName?: string;

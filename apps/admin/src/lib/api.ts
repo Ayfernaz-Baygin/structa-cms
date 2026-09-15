@@ -282,6 +282,14 @@ export function resolveFieldImageUrl(
   return `${API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
+export interface SiteSettingsTranslation {
+  locale: "tr" | "en";
+  siteName: string | null;
+  siteDescription: string | null;
+  footerText: string | null;
+  address: string | null;
+}
+
 export interface SiteSettings {
   id: string;
   siteName: string | null;
@@ -300,12 +308,18 @@ export interface SiteSettings {
   googleMapsUrl: string | null;
   googleAnalyticsId: string | null;
   homePageId: string | null;
+  translations?: SiteSettingsTranslation[];
   createdAt: string;
   updatedAt: string;
 }
 
 export type MenuLocation = "HEADER" | "FOOTER";
 export type MenuItemTarget = "SELF" | "BLANK";
+
+export interface MenuItemTranslation {
+  locale: "tr" | "en";
+  label: string;
+}
 
 export interface MenuItem {
   id: string;
@@ -315,6 +329,7 @@ export interface MenuItem {
   sortOrder: number;
   menuId: string;
   parentId: string | null;
+  translations?: MenuItemTranslation[];
   createdAt: string;
   updatedAt: string;
 }
