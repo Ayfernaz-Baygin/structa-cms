@@ -9,6 +9,7 @@ import { PagesModule } from './pages/pages.module.js';
 import { ServicesModule } from './services/services.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { PostsModule } from './posts/posts.module.js';
+import { MediaModule } from './media/media.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PostsModule } from './posts/posts.module.js';
     ServicesModule,
     ProjectsModule,
     PostsModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

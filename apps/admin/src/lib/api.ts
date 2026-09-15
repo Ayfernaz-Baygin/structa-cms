@@ -120,3 +120,45 @@ export interface Post {
   updatedAt: string;
   publishedAt: string | null;
 }
+
+export interface MediaUploader {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+export interface Media {
+  id: string;
+  originalName: string;
+  fileName: string;
+  mimeType: string;
+  extension: string;
+  size: number;
+  width: number | null;
+  height: number | null;
+  altText: string | null;
+  title: string | null;
+  path: string;
+  url: string;
+  uploadedById: string;
+  uploadedBy: MediaUploader;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MediaPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface MediaListResponse {
+  items: Media[];
+  pagination: MediaPagination;
+}
+
+export function getMediaUrl(media: Pick<Media, 'url'>): string {
+  return `${API_URL}${media.url}`;
+}

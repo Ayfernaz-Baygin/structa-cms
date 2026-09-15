@@ -24,6 +24,7 @@ model User {
   isActive     Boolean  @default(true)
 
   posts Post[]
+  media Media[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -163,4 +164,25 @@ model Post {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
+}
+
+model Media {
+  id           String  @id @default(uuid())
+  originalName String
+  fileName     String  @unique
+  mimeType     String
+  extension    String
+  size         Int
+  width        Int?
+  height       Int?
+  altText      String?
+  title        String?
+  path         String
+  url          String
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
