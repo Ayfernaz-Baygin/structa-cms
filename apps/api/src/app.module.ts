@@ -10,6 +10,8 @@ import { ServicesModule } from './services/services.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { PostsModule } from './posts/posts.module.js';
 import { MediaModule } from './media/media.module.js';
+import { SettingsModule } from './settings/settings.module.js';
+import { MenusModule } from './menus/menus.module.js';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { MediaModule } from './media/media.module.js';
     ProjectsModule,
     PostsModule,
     MediaModule,
+    SettingsModule,
+    MenusModule,
   ],
   controllers: [AppController],
   providers: [AppService],

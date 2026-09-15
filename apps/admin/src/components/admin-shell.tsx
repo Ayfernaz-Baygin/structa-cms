@@ -96,8 +96,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Projeler', href: '/projects', enabled: true, icon: FolderIcon },
   { label: 'Blog', href: '/blog', enabled: true, icon: PencilIcon },
   { label: 'Medya', href: '/media', enabled: true, icon: ImageIcon },
-  { label: 'Menüler', href: '/menus', enabled: false, icon: ListIcon },
-  { label: 'Ayarlar', href: '/settings', enabled: false, icon: GearIcon },
+  { label: 'Menüler', href: '/menus', enabled: true, icon: ListIcon },
+  { label: 'Ayarlar', href: '/settings', enabled: true, icon: GearIcon },
 ];
 
 function getInitials(user: AuthUser) {

@@ -162,3 +162,52 @@ export interface MediaListResponse {
 export function getMediaUrl(media: Pick<Media, 'url'>): string {
   return `${API_URL}${media.url}`;
 }
+
+export interface SiteSettings {
+  id: string;
+  siteName: string | null;
+  siteDescription: string | null;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  linkedinUrl: string | null;
+  youtubeUrl: string | null;
+  xUrl: string | null;
+  footerText: string | null;
+  googleMapsUrl: string | null;
+  googleAnalyticsId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MenuLocation = 'HEADER' | 'FOOTER';
+export type MenuItemTarget = 'SELF' | 'BLANK';
+
+export interface MenuItem {
+  id: string;
+  label: string;
+  url: string;
+  target: MenuItemTarget;
+  sortOrder: number;
+  menuId: string;
+  parentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MenuItemWithChildren extends MenuItem {
+  children: MenuItem[];
+}
+
+export interface Menu {
+  id: string;
+  name: string;
+  location: MenuLocation;
+  items: MenuItemWithChildren[];
+  createdAt: string;
+  updatedAt: string;
+}

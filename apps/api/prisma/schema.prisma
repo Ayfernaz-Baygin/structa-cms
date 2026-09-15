@@ -186,3 +186,67 @@ model Media {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Singleton row: the fixed literal id ("singleton") is upserted against, so
+// there is always exactly one row and no separate uniqueness trick is needed.
+model SiteSettings {
+  id String @id @default("singleton")
+
+  siteName          String?
+  siteDescription   String?
+  logoUrl           String?
+  faviconUrl        String?
+  email             String?
+  phone             String?
+  address           String?
+  instagramUrl      String?
+  facebookUrl       String?
+  linkedinUrl       String?
+  youtubeUrl        String?
+  xUrl              String?
+  footerText        String?
+  googleMapsUrl     String?
+  googleAnalyticsId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum MenuLocation {
+  HEADER
+  FOOTER
+}
+
+enum MenuItemTarget {
+  SELF
+  BLANK
+}
+
+model Menu {
+  id       String       @id @default(uuid())
+  name     String
+  location MenuLocation @unique
+
+  items MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuItem {
+  id        String         @id @default(uuid())
+  label     String
+  url       String
+  target    MenuItemTarget @default(SELF)
+  sortOrder Int            @default(0)
+
+  menuId String
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children MenuItem[] @relation("MenuItemChildren")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
