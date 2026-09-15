@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "@/components/locale-link";
 
 import { Container } from "@/components/container";
+import { MediaImage } from "@/components/media-image";
 import type { CtaSectionData } from "@/lib/api";
 import { resolveMediaUrl } from "@/lib/media";
 import { isSafeHref } from "@/lib/safe-href";
@@ -15,10 +15,9 @@ export function CtaSection({ data }: { data: CtaSectionData }) {
       <Container>
         <div className="relative overflow-hidden rounded-3xl border border-border bg-stone-900 px-6 py-16 text-center text-white sm:px-16">
           {imageUrl && (
-            <Image
+            <MediaImage
               src={imageUrl}
               alt=""
-              fill
               className="absolute inset-0 object-cover opacity-20"
             />
           )}

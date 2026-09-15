@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "@/components/locale-link";
+import { MediaImage } from "@/components/media-image";
 
 import type { HeroSectionData } from "@/lib/api";
 import { resolveMediaUrl } from "@/lib/media";
@@ -23,10 +23,9 @@ export function HeroSection({ data }: { data: HeroSectionData }) {
 
         {imageUrl && (
           <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-stone-100">
-            <Image
+            <MediaImage
               src={imageUrl}
               alt={data.title}
-              fill
               priority
               className="object-cover"
             />

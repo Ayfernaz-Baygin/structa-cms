@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import { Container } from '@/components/container';
+import { MediaImage } from '@/components/media-image';
 import { RichText } from '@/components/rich-text';
 import { getServiceBySlug } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media';
@@ -39,7 +39,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
     <article>
       {coverUrl && (
         <div className="relative aspect-[21/9] w-full overflow-hidden bg-stone-100">
-          <Image src={coverUrl} alt={service.title} fill priority className="object-cover" />
+          <MediaImage src={coverUrl} alt={service.title} priority className="object-cover" />
         </div>
       )}
 

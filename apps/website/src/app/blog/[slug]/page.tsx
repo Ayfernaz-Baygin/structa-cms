@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import { Container } from '@/components/container';
+import { MediaImage } from '@/components/media-image';
 import { RichText } from '@/components/rich-text';
 import { getPostBySlug } from '@/lib/api';
 import { formatAuthorName, formatDate } from '@/lib/format';
@@ -42,7 +42,7 @@ export default async function PostDetailPage({ params }: PageProps) {
     <article>
       {coverUrl && (
         <div className="relative aspect-[21/9] w-full overflow-hidden bg-stone-100">
-          <Image src={coverUrl} alt={post.title} fill priority className="object-cover" />
+          <MediaImage src={coverUrl} alt={post.title} priority className="object-cover" />
         </div>
       )}
 

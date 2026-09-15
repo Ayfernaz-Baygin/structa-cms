@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import { Container } from '@/components/container';
+import { MediaImage } from '@/components/media-image';
 import { RichText } from '@/components/rich-text';
 import { getProjectBySlug } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media';
@@ -50,7 +50,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
     <article>
       {coverUrl && (
         <div className="relative aspect-[21/9] w-full overflow-hidden bg-stone-100">
-          <Image src={coverUrl} alt={project.title} fill priority className="object-cover" />
+          <MediaImage src={coverUrl} alt={project.title} priority className="object-cover" />
         </div>
       )}
 
@@ -82,10 +82,9 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                         key={image.id}
                         className="relative aspect-square overflow-hidden rounded-xl bg-stone-100"
                       >
-                        <Image
+                        <MediaImage
                           src={imageUrl}
                           alt={image.altText ?? project.title}
-                          fill
                           className="object-cover transition duration-300 hover:scale-105"
                         />
                       </div>

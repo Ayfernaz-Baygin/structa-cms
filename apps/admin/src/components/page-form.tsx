@@ -110,9 +110,46 @@ export function PageForm({ initialPage }: PageFormProps) {
     }
   }
 
+  const saveActions = (
+    <div>
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          form="page-form"
+          disabled={saving}
+          className="rounded-xl bg-indigo-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {saving
+            ? "Kaydediliyor..."
+            : isEdit
+              ? "Sayfa Bilgilerini Kaydet"
+              : "Sayfayı Oluştur"}
+        </button>
+
+        <Link
+          href="/pages"
+          className="rounded-xl border border-zinc-800 px-5 py-3 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:bg-zinc-900 hover:text-white"
+        >
+          İptal
+        </Link>
+      </div>
+      {isEdit && (
+        <p className="mt-2 text-xs text-zinc-500">
+          Bu buton yalnızca sayfanın temel bilgilerini (başlık, slug, legacy içerik, durum, SEO)
+          kaydeder. Page Builder bölümleri eklenip düzenlendiğinde ayrıca ve anında kaydedilir.
+        </p>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form id="page-form" onSubmit={handleSubmit} className="space-y-6">
         <LocaleTabs
           locale={locale}
           onChange={translation.setLocale}
@@ -166,21 +203,29 @@ export function PageForm({ initialPage }: PageFormProps) {
                 />
               </div>
 
-              <div className="mt-5">
-                <label
-                  htmlFor="body"
-                  className="mb-2 block text-sm font-medium text-zinc-300"
-                >
-                  İçerik
+              <details
+                className="mt-5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 [&_summary]:cursor-pointer"
+                open={Boolean(initialPage?.body?.trim())}
+              >
+                <summary className="text-sm font-medium text-zinc-300">
+                  Legacy İçerik
+                </summary>
+                <p className="mt-2 text-xs text-zinc-500">
+                  Bu alan, sayfada hiç Page Builder bölümü yoksa yayında gösterilen{" "}
+                  <strong className="text-zinc-400">fallback (yedek) içeriktir</strong>.
+                  Bölüm eklediğinizde bu metin yerine bölümler gösterilir.
+                </p>
+                <label htmlFor="body" className="sr-only">
+                  Legacy İçerik
                 </label>
                 <textarea
                   id="body"
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
-                  rows={14}
-                  className="w-full resize-y rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
+                  rows={6}
+                  className="mt-3 w-full resize-y rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-indigo-500"
                 />
-              </div>
+              </details>
             </div>
 
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
@@ -243,35 +288,11 @@ export function PageForm({ initialPage }: PageFormProps) {
           </div>
         </div>
 
-        {error && (
-          <div className="rounded-xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm text-red-300">
-            {error}
-          </div>
-        )}
-
-        <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-xl bg-indigo-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {saving
-              ? "Kaydediliyor..."
-              : isEdit
-                ? "Değişiklikleri Kaydet"
-                : "Sayfayı Oluştur"}
-          </button>
-
-          <Link
-            href="/pages"
-            className="rounded-xl border border-zinc-800 px-5 py-3 text-sm font-medium text-zinc-300 transition hover:border-zinc-700 hover:bg-zinc-900 hover:text-white"
-          >
-            İptal
-          </Link>
-        </div>
+        {!isEdit && saveActions}
       </form>
 
       {isEdit && initialPage && <PageSectionBuilder page={initialPage} />}
+      {isEdit && saveActions}
       {isEdit && initialPage && <PageRevisionHistory page={initialPage} />}
     </div>
   );

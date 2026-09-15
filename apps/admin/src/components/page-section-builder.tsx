@@ -573,9 +573,17 @@ export function PageSectionBuilder({ page }: { page: Page }) {
 
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-      <h2 className="text-sm font-semibold text-white">Sayfa Bölümleri</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-white">Sayfa Bölümleri</h2>
+        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+          Otomatik kaydedilir
+        </span>
+      </div>
       <p className="mt-1 text-xs text-zinc-500">
-        Sayfanızı hazır bloklardan oluşturun. Hiç bölüm eklemezseniz yukarıdaki İçerik alanı kullanılır.
+        Sayfanızı hazır bloklardan oluşturun. Hiç bölüm eklemezseniz yukarıdaki Legacy İçerik alanı kullanılır.
+      </p>
+      <p className="mt-1 text-xs text-zinc-500">
+        Sayfa bölümleri şu an tüm diller için ortaktır.
       </p>
 
       {error && (
@@ -591,7 +599,7 @@ export function PageSectionBuilder({ page }: { page: Page }) {
           </div>
         ) : sections.length === 0 ? (
           <div className="rounded-xl border border-dashed border-zinc-800 px-6 py-8 text-center text-sm text-zinc-500">
-            Henüz bölüm eklenmedi.
+            İlk bölümünüzü ekleyerek sayfayı oluşturmaya başlayın.
           </div>
         ) : (
           sections.map((section, index) => (

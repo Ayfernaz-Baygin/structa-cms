@@ -62,16 +62,31 @@ export class PublicService {
           homePage: { include: { translations: true } },
         },
       })
-      .then((settings) => ({
-        ...localizeSettings(settings, locale),
-        homePage:
-          settings.homePage && settings.homePage.status === 'PUBLISHED'
-            ? (() => {
-                const page = localize(settings.homePage, locale);
-                return page.translationLocale ? { slug: page.slug } : null;
-              })()
-            : null,
-      }));
+      .then((settings) => {
+        // Public response only — trim internal/admin-only fields (id, FKs,
+        // timestamps, raw translations array) that the website never reads.
+        const {
+          id: _id,
+          homePageId: _homePageId,
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          translations: _translations,
+          locale: _locale,
+          translationLocale: _translationLocale,
+          ...publicSettings
+        } = localizeSettings(settings, locale);
+
+        return {
+          ...publicSettings,
+          homePage:
+            settings.homePage && settings.homePage.status === 'PUBLISHED'
+              ? (() => {
+                  const page = localize(settings.homePage, locale);
+                  return page.translationLocale ? { slug: page.slug } : null;
+                })()
+              : null,
+        };
+      });
   }
 
   getMenus(locale: Locale = 'tr') {

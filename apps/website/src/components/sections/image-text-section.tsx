@@ -1,6 +1,5 @@
-import Image from 'next/image';
-
 import { Container } from '@/components/container';
+import { MediaImage } from '@/components/media-image';
 import { RichText } from '@/components/rich-text';
 import type { ImageTextSectionData } from '@/lib/api';
 import { resolveMediaUrl } from '@/lib/media';
@@ -15,9 +14,7 @@ export function ImageTextSection({ data }: { data: ImageTextSectionData }) {
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           <div className={imageFirst ? 'lg:order-1' : 'lg:order-2'}>
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-stone-100">
-              {imageUrl && (
-                <Image src={imageUrl} alt={data.title ?? ''} fill className="object-cover" />
-              )}
+              <MediaImage src={imageUrl} alt={data.title ?? ''} className="object-cover" />
             </div>
           </div>
           <div className={imageFirst ? 'lg:order-2' : 'lg:order-1'}>
