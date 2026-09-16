@@ -1,68 +1,101 @@
 # Structa CMS
 
-Bir mimarlık/tasarım stüdyosu için geliştirilmiş, çok dilli (TR/EN) içerik yönetim sistemi. Üç bağımsız uygulamadan oluşur: bir REST API, bir yönetim paneli (admin) ve herkese açık kurumsal web sitesi.
+Structa CMS, mimarlık ve tasarım stüdyoları için geliştirilmiş, TR/EN destekli bir içerik yönetim sistemi ve kurumsal web platformudur. Yönetim paneli, REST API ve public website birbirinden bağımsız üç uygulama olarak çalışır.
 
-## Proje Özeti
+**Production durumu:** Aktif — Railway üzerinde yayındadır.
 
-Structa CMS; sayfa, hizmet, proje ve blog içeriklerini rol tabanlı yetkilendirme ile yöneten, her içerik türü için TR/EN çevirisini destekleyen, sürüm geçmişi ve denetim (audit) kaydı tutan bir CMS'tir. Admin panelinden yönetilen içerikler, salt-okunur bir public API üzerinden herkese açık web sitesinde `/tr` ve `/en` altında yayınlanır.
+## Production
+
+| Servis | Adres |
+| --- | --- |
+| Website | [structa-website-production.up.railway.app](https://structa-website-production.up.railway.app) |
+| Admin | [structa-admin-production.up.railway.app](https://structa-admin-production.up.railway.app) |
+| API | [structa-cms-production.up.railway.app](https://structa-cms-production.up.railway.app) |
+| API Health | [structa-cms-production.up.railway.app/health](https://structa-cms-production.up.railway.app/health) |
+| Database Health | [structa-cms-production.up.railway.app/health/database](https://structa-cms-production.up.railway.app/health/database) |
+
+Production ortamında Railway PostgreSQL ve yüklenen medya dosyaları için persistent volume kullanılmaktadır.
+
+## Temel Özellikler
+
+- Sayfa, hizmet, proje ve blog içerik yönetimi
+- TR/EN içerik, site ayarı ve menü desteği
+- Hero, metin, görsel, liste ve CTA bölümlerinden oluşan Page Builder
+- Draft/Publish içerik akışı
+- Sayfa revision history ve önceki sürüme dönüş
+- Kullanıcı işlemleri için audit logs
+- SEO başlığı ve açıklaması yönetimi
+- Görsel ve doküman destekli media library
+- Header/footer menüleri ve iki seviyeli menü yapısı
+- JWT authentication ve rol tabanlı yetkilendirme (RBAC)
+- `SUPER_ADMIN`, `ADMIN`, `EDITOR` ve `AUTHOR` rolleri
+- Public içerikler için salt okunur API
+
+Admin paneli authentication ile korunur. Yetkili endpointler JWT ve RBAC kontrollerinden geçer; erişim tokenı admin uygulamasında `httpOnly` cookie ile yönetilir.
+
+## Teknoloji Stack'i
+
+| Katman | Teknolojiler |
+| --- | --- |
+| API | NestJS 12, TypeScript, Prisma ORM 7, PostgreSQL 17 |
+| Authentication | JWT, argon2, RBAC guards |
+| Admin | Next.js 16, React 19, Tailwind CSS 4 |
+| Website | Next.js 16, React Server Components, Tailwind CSS 4 |
+| Validation | class-validator, class-transformer |
+| Test | Vitest, Supertest |
+| Deployment | Railway, PostgreSQL, persistent media volume |
 
 ## Mimari
 
-Monorepo yapısında, npm workspace kullanılmadan üç bağımsız Node.js uygulaması:
-
-```
+```text
 structa-cms/
 ├── apps/
-│   ├── api/       NestJS + Prisma 7 + PostgreSQL — REST API (port 4000)
-│   ├── admin/     Next.js 16 — yönetim paneli (port 3001)
-│   └── website/   Next.js 16 — herkese açık web sitesi (port 3000)
-├── docker-compose.yml   PostgreSQL servisi
-└── .env.example         Docker Compose ortam değişkenleri
+│   ├── api/       # NestJS REST API, Prisma ve iş kuralları
+│   ├── admin/     # Next.js yönetim paneli
+│   └── website/   # Next.js public website
+├── docker-compose.yml
+└── .env.example
 ```
 
-- **apps/api** — Tüm veri modelini ve iş kurallarını barındırır. JWT tabanlı kimlik doğrulama, rol bazlı yetkilendirme (RBAC), denetim kaydı (audit log), sayfa sürüm geçmişi ve TR/EN çeviri tablolarını içerir. Admin ve public olmak üzere iki ayrı uç nokta grubu sunar (`/pages`, `/services`, ... yönetim; `/public/*` salt-okunur).
-- **apps/admin** — API'ye sunucu tarafı proxy route'ları (`/api/*`) üzerinden bağlanır; JWT, httpOnly cookie olarak tutulur, tarayıcıya sızmaz. Sayfa oluşturucu (page builder), medya kütüphanesi, TR/EN sekmeli içerik formları, kullanıcı/rol yönetimi ve denetim kaydı görüntüleme burada.
-- **apps/website** — Sunucu bileşenleri (React Server Components) üzerinden `apps/api`'nin `/public/*` uçlarını çağırır; tarayıcıdan doğrudan API'ye istek atılmaz (CORS bu yüzden yalnızca admin origin'ine açıktır). `proxy.ts` middleware'i `/tr` ve `/en` önekli URL'leri iç route ağacına rewrite eder, kök `/` isteğini `/tr`'ye yönlendirir.
+### `apps/api`
 
-## Kullanılan Teknolojiler
+Veri modeli, authentication, RBAC, içerik işlemleri, revision history, audit logs, medya depolama ve public API burada bulunur. Yönetim endpointleri korumalıdır; `/public/*` endpointleri yayınlanmış içeriği website'e sunar.
 
-| Katman | Teknoloji |
-| --- | --- |
-| API | NestJS 12, Prisma ORM 7 (driver adapters), PostgreSQL 17, JWT (`@nestjs/jwt`), argon2 (parola hash), class-validator/class-transformer |
-| Admin | Next.js 16 (App Router), React 19, TypeScript 6, Tailwind CSS 4 |
-| Website | Next.js 16 (App Router, RSC, `force-dynamic`), React 19, TypeScript 6, Tailwind CSS 4 |
-| Veritabanı | PostgreSQL 17 (Docker Compose ile) |
-| Test | Vitest (API unit/e2e) |
+### `apps/admin`
 
-## Kurulum
+İçerik, kullanıcı, medya, menü ve site ayarlarının yönetildiği paneldir. Tarayıcı isteklerini kendi `/api/*` route'ları üzerinden backend'e iletir.
 
-### Ön koşullar
+### `apps/website`
 
-- Node.js 22+ (proje Node 24 ile test edilmiştir)
-- Docker Desktop (PostgreSQL için) — veya yerel bir PostgreSQL 17 kurulumu
+Public API'den yayınlanmış içeriği alan kurumsal web uygulamasıdır. `/tr` ve `/en` rotaları üzerinden çok dilli içerik sunar.
 
-### 1. Ortam değişkenleri
+## Local Development
 
-Her uygulamanın kendi `.env.example` dosyası vardır; gerçek değerlerle `.env` (api, root) veya `.env.local` (website) olarak kopyalanmalıdır:
+### Gereksinimler
+
+- Node.js 24.15+
+- Docker Desktop veya PostgreSQL 17
+
+### 1. Ortam dosyaları
 
 ```bash
-cp .env.example .env                       # Docker Compose (Postgres kullanıcı/şifre)
-cp apps/api/.env.example apps/api/.env      # DATABASE_URL, JWT_SECRET, SEED_ADMIN_*
-cp apps/admin/.env.example apps/admin/.env  # API_URL
-cp apps/website/.env.example apps/website/.env.local  # API_URL, NEXT_PUBLIC_API_URL
+cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/admin/.env.example apps/admin/.env.local
+cp apps/website/.env.example apps/website/.env.local
 ```
 
-`apps/api/.env` içindeki `JWT_SECRET` ve `SEED_ADMIN_PASSWORD` değerlerini gerçek/kendi ortamınıza göre değiştirin. `.env*` dosyaları `.gitignore` ile hariç tutulur — hiçbir gerçek secret repoya commit edilmez, yalnızca `.env.example` şablonları takip edilir.
+Örnek dosyalardaki placeholder değerleri yerel ortamınıza göre doldurun. Secret ve bağlantı bilgilerini repoya eklemeyin.
 
-### 2. Docker ile PostgreSQL
+### 2. PostgreSQL
 
 ```bash
 docker compose up -d
 ```
 
-`docker-compose.yml`, kök dizindeki `.env` dosyasındaki `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` değişkenlerini kullanır ve verileri `structa_postgres_data` adlı kalıcı bir volume'de saklar.
+### 3. Bağımlılıklar
 
-### 3. Bağımlılıkları kurun
+Her uygulama bağımsız bir `package.json` kullanır:
 
 ```bash
 cd apps/api && npm install
@@ -70,66 +103,57 @@ cd ../admin && npm install
 cd ../website && npm install
 ```
 
-### 4. Migration + seed (apps/api içinde)
+### 4. Migration ve başlangıç verisi
 
 ```bash
 cd apps/api
-npm run db:migrate   # tüm migration'ları veritabanına uygular
-npm run db:seed      # tek bir SUPER_ADMIN kullanıcısı upsert eder (idempotent)
+npm run db:migrate
+npm run db:seed
 ```
 
-## API / Admin / Website Çalıştırma Komutları
+Seed komutu bir `SUPER_ADMIN` hesabını env değişkenlerinden oluşturur veya günceller. Giriş bilgileri kaynak kodda ya da bu dokümantasyonda tutulmaz.
 
-Her uygulama ayrı bir terminalde, kendi dizininden çalıştırılır (root'ta ortak bir script yoktur):
+### 5. Uygulamaları çalıştırma
+
+Her komutu ayrı terminalde çalıştırın:
 
 ```bash
-# Terminal 1 — API (http://localhost:4000)
 cd apps/api && npm run start:dev
-
-# Terminal 2 — Admin panel (http://localhost:3001)
 cd apps/admin && npm run dev
-
-# Terminal 3 — Public website (http://localhost:3000)
 cd apps/website && npm run dev
 ```
 
-Diğer scriptler:
+Yerel adresler sırasıyla API için `http://localhost:4000`, admin için `http://localhost:3001` ve website için `http://localhost:3000` şeklindedir.
 
-| Uygulama | build | test | production start |
+## Ortam Değişkenleri
+
+Gerçek değerler yalnızca deployment platformunda veya takip edilmeyen yerel env dosyalarında tutulmalıdır.
+
+### API
+
+- `DATABASE_URL`: PostgreSQL bağlantı adresi
+- `JWT_SECRET`: JWT imzalama anahtarı
+- `CORS_ORIGINS`: İzin verilen admin origin listesi
+- `UPLOADS_DIR`: Kalıcı medya volume dizini
+- `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`: Yalnızca seed işlemi için yönetici bilgileri
+- `NODE_ENV`, `HOST`, `PORT`: Çalışma ortamı ve sunucu ayarları
+
+### Admin ve Website
+
+- `API_URL`: Sunucu tarafındaki API adresi
+- `NEXT_PUBLIC_API_URL`: Tarayıcıdan erişilebilen public API/medya adresi
+- `ALLOW_LOCAL_MEDIA_IP`: Website image optimizer için yalnızca güvenilen özel ağlarda kullanılan opsiyonel ayar
+
+## Build ve Production Komutları
+
+| Uygulama | Build | Type-check | Production start |
 | --- | --- | --- | --- |
-| api | `npm run build` (nest build) | `npm run test` (vitest, 25 test) / `npm run test:e2e` | `npm run start:prod` (`node dist/main`) |
-| admin | `npm run build` | — | `npm run start` |
-| website | `npm run build` | — | `npm run start` |
+| API | `npm run build` | `npm run typecheck` | `npm run start:prod` |
+| Admin | `npm run build` | `npm run typecheck` | `npm run start` |
+| Website | `npm run build` | `npm run typecheck` | `npm run start` |
 
-## Demo Kullanıcı Bilgisi
+Railway üzerinde API production build komutu `npx prisma generate && npm run build` olarak yapılandırılmıştır.
 
-Seed script, `apps/api/.env` içindeki `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` değerleriyle tek bir **SUPER_ADMIN** hesabı oluşturur. Örnek `.env.example` değerleriyle:
+Production migration'ları API dizininde `npm run db:migrate` ile uygulanır. `npm run db:seed` her deploy'da çalıştırılmamalı; yalnızca ilk kurulum veya kontrollü yönetici hesabı güncellemesi için kullanılmalıdır.
 
-```
-E-posta: admin@structa.local
-Şifre:   apps/api/.env dosyasındaki SEED_ADMIN_PASSWORD değeri
-```
-
-Bu bilgilerle `http://localhost:3001/login` üzerinden admin paneline giriş yapılabilir. Diğer roller (`ADMIN`, `EDITOR`, `AUTHOR`) panel içinden Kullanıcılar ekranıyla SUPER_ADMIN tarafından oluşturulur; kullanıcılar API üzerinden sert silinemez, yalnızca pasifleştirilir (`isActive: false`) — bu sayede denetim kaydı (audit log) bütünlüğü korunur.
-
-## Temel Özellikler
-
-- **İçerik yönetimi** — Sayfa (Page Builder ile bölüm bazlı), Hizmet, Proje (galeri görselli), Blog Yazısı CRUD'ları; taslak/yayında durumu.
-- **Sayfa Oluşturucu (Page Builder)** — Hero, metin, görsel+metin, hizmetler, projeler, yazılar, CTA bölüm tipleriyle sürükle-bırak sıralamalı sayfa kurulumu; ayarlanabilir ana sayfa seçimi (yalnızca yayında bir sayfa ana sayfa olabilir).
-- **Çoklu dil (TR/EN)** — Page/Service/Project/Post içerikleri, site ayarları (site adı, açıklama, footer metni, adres) ve menü öğesi etiketleri için ayrı çeviri tabloları; istenen dilde çeviri yoksa otomatik TR fallback; slug'lar dil bazında benzersiz. Public API `?locale=tr|en` ile, website `/tr` ve `/en` URL önekleriyle çalışır.
-- **Rol Bazlı Yetkilendirme (RBAC)** — `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `AUTHOR` rolleri; her uç nokta rol bazlı korunur.
-- **Denetim Kaydı (Audit Log)** — Tüm CREATE/UPDATE/DELETE/PUBLISH/RESTORE/LOGIN olayları kullanıcı, zaman ve varlık bilgisiyle otomatik kaydedilir.
-- **Sürüm Geçmişi (Version History)** — Sayfa güncellemelerinden önce otomatik anlık görüntü (snapshot) alınır; geçmiş sürümlere (çeviriler dahil) dönülebilir.
-- **Medya Kütüphanesi** — Görsel yükleme, boyut/tip bilgisi, admin formlarında medya seçici entegrasyonu.
-- **Menü Yönetimi** — Header/Footer menüleri, 2 seviyeli (üst/alt öğe) hiyerarşi, sürükle-bırak olmadan yukarı/aşağı sıralama.
-- **Site Ayarları** — Logo/favicon, iletişim bilgileri, sosyal medya linkleri, Google Maps/Analytics entegrasyonu.
-
-## Notlar
-
-- Prisma migration'ları bu ortamda `prisma migrate dev` yerine `migrate deploy` ile uygulanır (non-interaktif); yeni bir migration eklerken önce schema diff'i incelenip migration SQL'i elle yazılmalı, sonra `migrate deploy` çalıştırılmalıdır.
-- Production'da API için `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGINS` ve kalıcı bir volume'a işaret eden `UPLOADS_DIR` tanımlanmalıdır. `CORS_ORIGINS`, virgülle ayrılmış admin origin listesi kabul eder.
-- Admin ve website production build'lerinde hem sunucu tarafı `API_URL` hem de tarayıcının medya dosyaları için erişebildiği `NEXT_PUBLIC_API_URL` tanımlanmalıdır. `NEXT_PUBLIC_*` değeri build anında sabitlenir.
-- Medya dosyaları yerel dosya sistemine yazılır. `UPLOADS_DIR` ephemeral container diskinde tutulmamalı; kalıcı ve yedeklenen bir volume kullanılmalıdır. Birden fazla API replica'sı için paylaşımlı object storage adaptörü gerekir.
-- Deployment sırası: API bağımlılıkları → `npm run db:migrate` → yalnızca ilk kurulumda/hesap kurtarmada `npm run db:seed` → `npm run build` → `npm run start:prod`. Seed her deploy'da çalıştırılırsa SUPER_ADMIN parolası env değerine yeniden yazılır.
-- API liveness kontrolü `GET /health`, veritabanı readiness kontrolü `GET /health/database` adresindedir.
-- Media kütüphanesindeki demo görselleri küçük yer tutucu (placeholder) görsellerdir; gerçek bir demo/sunum öncesi marka görselleriyle (logo, favicon, kapak görselleri) değiştirilmesi önerilir.
+Medya dosyaları local filesystem tabanlıdır ve Railway persistent volume üzerinde saklanır. Volume silinmemeli ve deployment sırasında aynı `UPLOADS_DIR` konumuna bağlanmalıdır.
