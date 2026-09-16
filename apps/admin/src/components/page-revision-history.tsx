@@ -25,11 +25,6 @@ export function PageRevisionHistory({ page }: { page: Page }) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadRevisions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page.id]);
-
   async function loadRevisions() {
     setError('');
 
@@ -47,6 +42,11 @@ export function PageRevisionHistory({ page }: { page: Page }) {
       setRevisions([]);
     }
   }
+
+  useEffect(() => {
+    queueMicrotask(() => void loadRevisions());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page.id]);
 
   async function toggleExpand(revisionId: string) {
     if (expandedId === revisionId) {

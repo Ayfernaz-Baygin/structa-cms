@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 import { slugify } from '@/lib/slug';
 
@@ -37,11 +37,7 @@ export function CategoryManager({
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadCategories();
-  }, []);
-
-  async function loadCategories() {
+  const loadCategories = useCallback(async () => {
     setError('');
 
     try {
@@ -57,7 +53,11 @@ export function CategoryManager({
       setError(err instanceof Error ? err.message : 'Kategoriler yüklenemedi.');
       setCategories([]);
     }
-  }
+  }, [endpoint]);
+
+  useEffect(() => {
+    queueMicrotask(() => void loadCategories());
+  }, [loadCategories]);
 
   function handleNameChange(value: string) {
     setName(value);

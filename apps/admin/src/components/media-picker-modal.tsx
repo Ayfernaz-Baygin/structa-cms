@@ -36,32 +36,6 @@ export function MediaPickerModal({ accept, onSelect, onClose }: MediaPickerModal
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Media | null>(null);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(1);
-    }, 350);
-
-    return () => clearTimeout(timeout);
-  }, [searchInput]);
-
-  useEffect(() => {
-    void loadMedia();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, search, page]);
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function loadMedia() {
     setError('');
 
@@ -90,6 +64,32 @@ export function MediaPickerModal({ accept, onSelect, onClose }: MediaPickerModal
       setItems([]);
     }
   }
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 350);
+
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+  useEffect(() => {
+    queueMicrotask(() => void loadMedia());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, search, page]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleConfirm() {
     if (selected) {

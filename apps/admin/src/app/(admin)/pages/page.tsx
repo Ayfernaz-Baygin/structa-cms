@@ -31,10 +31,6 @@ export default function PagesListPage() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadPages();
-  }, []);
-
   async function loadPages() {
     setError('');
 
@@ -52,6 +48,10 @@ export default function PagesListPage() {
       setPages([]);
     }
   }
+
+  useEffect(() => {
+    queueMicrotask(() => void loadPages());
+  }, []);
 
   async function handleDelete(id: string) {
     setDeletingId(id);

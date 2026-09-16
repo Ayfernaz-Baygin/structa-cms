@@ -1,5 +1,6 @@
 import type { ContentTranslation } from "./content-translations";
 export const API_URL = process.env.API_URL ?? "http://localhost:4000";
+const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export const AUTH_COOKIE_NAME = "structa_access_token";
 
@@ -260,7 +261,7 @@ export interface MediaListResponse {
 }
 
 export function getMediaUrl(media: Pick<Media, "url">): string {
-  return `${API_URL}${media.url}`;
+  return `${PUBLIC_API_URL}${media.url}`;
 }
 
 /**
@@ -279,7 +280,7 @@ export function resolveFieldImageUrl(
     return url;
   }
 
-  return `${API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  return `${PUBLIC_API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 export interface SiteSettingsTranslation {

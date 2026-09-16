@@ -31,10 +31,6 @@ export default function ServicesListPage() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadServices();
-  }, []);
-
   async function loadServices() {
     setError('');
 
@@ -52,6 +48,10 @@ export default function ServicesListPage() {
       setServices([]);
     }
   }
+
+  useEffect(() => {
+    queueMicrotask(() => void loadServices());
+  }, []);
 
   async function handleDelete(id: string) {
     setDeletingId(id);

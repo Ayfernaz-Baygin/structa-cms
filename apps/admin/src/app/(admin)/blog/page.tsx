@@ -41,10 +41,6 @@ export default function BlogListPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showCategories, setShowCategories] = useState(false);
 
-  useEffect(() => {
-    void loadPosts();
-  }, []);
-
   async function loadPosts() {
     setError('');
 
@@ -62,6 +58,10 @@ export default function BlogListPage() {
       setPosts([]);
     }
   }
+
+  useEffect(() => {
+    queueMicrotask(() => void loadPosts());
+  }, []);
 
   async function handleDelete(id: string) {
     setDeletingId(id);

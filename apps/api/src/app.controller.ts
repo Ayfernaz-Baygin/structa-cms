@@ -13,13 +13,18 @@ export class AppController {
     };
   }
 
+  @Get('health')
+  health() {
+    return { status: 'ok' };
+  }
+
   @Get('health/database')
   async databaseHealth() {
-    const userCount = await this.prisma.user.count();
+    await this.prisma.$queryRaw`SELECT 1`;
 
     return {
+      status: 'ok',
       database: 'connected',
-      users: userCount,
     };
   }
 }

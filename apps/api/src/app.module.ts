@@ -19,6 +19,22 @@ import { PublicModule } from './public/public.module.js';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: (config: Record<string, unknown>) => {
+        for (const name of ['DATABASE_URL', 'JWT_SECRET']) {
+          if (typeof config[name] !== 'string' || config[name].trim().length === 0) {
+            throw new Error(`${name} must be defined.`);
+          }
+        }
+
+        if (
+          config.NODE_ENV === 'production' &&
+          (config.JWT_SECRET as string).length < 32
+        ) {
+          throw new Error('JWT_SECRET must be at least 32 characters in production.');
+        }
+
+        return config;
+      },
     }),
     PrismaModule,
     AuditModule,

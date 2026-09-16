@@ -620,11 +620,6 @@ export function PageSectionBuilder({ page }: { page: Page }) {
   const [creatingType, setCreatingType] = useState<SectionType | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadSections();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page.id]);
-
   async function loadSections() {
     setError('');
 
@@ -642,6 +637,11 @@ export function PageSectionBuilder({ page }: { page: Page }) {
       setSections([]);
     }
   }
+
+  useEffect(() => {
+    queueMicrotask(() => void loadSections());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page.id]);
 
   async function handleCreate(type: SectionType, data: Record<string, unknown>) {
     const response = await fetch(`/api/pages/${page.id}/sections`, {

@@ -1,9 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 
-export const UPLOADS_ROOT = join(process.cwd(), 'uploads');
+const configuredUploadsDirectory = process.env.UPLOADS_DIR;
+
+export const UPLOADS_ROOT = configuredUploadsDirectory
+  ? isAbsolute(configuredUploadsDirectory)
+    ? configuredUploadsDirectory
+    : resolve(process.cwd(), configuredUploadsDirectory)
+  : join(process.cwd(), 'uploads');
 
 const IMAGES_DIR = 'images';
 const DOCUMENTS_DIR = 'documents';

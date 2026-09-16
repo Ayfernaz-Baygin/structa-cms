@@ -33,10 +33,6 @@ export default function ProjectsListPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showCategories, setShowCategories] = useState(false);
 
-  useEffect(() => {
-    void loadProjects();
-  }, []);
-
   async function loadProjects() {
     setError('');
 
@@ -54,6 +50,10 @@ export default function ProjectsListPage() {
       setProjects([]);
     }
   }
+
+  useEffect(() => {
+    queueMicrotask(() => void loadProjects());
+  }, []);
 
   async function handleDelete(id: string) {
     setDeletingId(id);

@@ -74,8 +74,8 @@ cd ../website && npm install
 
 ```bash
 cd apps/api
-npx prisma migrate deploy   # tüm migration'ları veritabanına uygular
-npx tsx prisma/seed.ts      # tek bir SUPER_ADMIN kullanıcısı upsert eder (idempotent)
+npm run db:migrate   # tüm migration'ları veritabanına uygular
+npm run db:seed      # tek bir SUPER_ADMIN kullanıcısı upsert eder (idempotent)
 ```
 
 ## API / Admin / Website Çalıştırma Komutları
@@ -127,5 +127,9 @@ Bu bilgilerle `http://localhost:3001/login` üzerinden admin paneline giriş yap
 ## Notlar
 
 - Prisma migration'ları bu ortamda `prisma migrate dev` yerine `migrate deploy` ile uygulanır (non-interaktif); yeni bir migration eklerken önce schema diff'i incelenip migration SQL'i elle yazılmalı, sonra `migrate deploy` çalıştırılmalıdır.
-- `apps/api/uploads/` dizini `.gitignore` ile hariç tutulur; medya dosyaları yerel dosya sistemine yazılır, prod ortamında kalıcı bir depolama/volume gerekir.
+- Production'da API için `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGINS` ve kalıcı bir volume'a işaret eden `UPLOADS_DIR` tanımlanmalıdır. `CORS_ORIGINS`, virgülle ayrılmış admin origin listesi kabul eder.
+- Admin ve website production build'lerinde hem sunucu tarafı `API_URL` hem de tarayıcının medya dosyaları için erişebildiği `NEXT_PUBLIC_API_URL` tanımlanmalıdır. `NEXT_PUBLIC_*` değeri build anında sabitlenir.
+- Medya dosyaları yerel dosya sistemine yazılır. `UPLOADS_DIR` ephemeral container diskinde tutulmamalı; kalıcı ve yedeklenen bir volume kullanılmalıdır. Birden fazla API replica'sı için paylaşımlı object storage adaptörü gerekir.
+- Deployment sırası: API bağımlılıkları → `npm run db:migrate` → yalnızca ilk kurulumda/hesap kurtarmada `npm run db:seed` → `npm run build` → `npm run start:prod`. Seed her deploy'da çalıştırılırsa SUPER_ADMIN parolası env değerine yeniden yazılır.
+- API liveness kontrolü `GET /health`, veritabanı readiness kontrolü `GET /health/database` adresindedir.
 - Media kütüphanesindeki demo görselleri küçük yer tutucu (placeholder) görsellerdir; gerçek bir demo/sunum öncesi marka görselleriyle (logo, favicon, kapak görselleri) değiştirilmesi önerilir.
