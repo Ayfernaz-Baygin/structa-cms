@@ -2,9 +2,22 @@
 
 import { useEffect, useState } from 'react';
 
+import type { Locale } from '@/lib/content-translations';
 import type { Page, PageSection, SectionType } from '@/lib/api';
 
+import { LocaleTabs } from './locale-tabs';
 import { MediaPicker } from './media-picker';
+
+/** Mirrors TEXT_FIELDS in apps/api/src/pages/page-section-data.validator.ts — the subset of `data` keys that are TR/EN-translatable text, as opposed to shared technical fields (imageUrl, limit, buttonUrl, ...). */
+const TEXT_FIELDS: Record<SectionType, string[]> = {
+  HERO: ['title', 'subtitle', 'ctaLabel'],
+  TEXT: ['title', 'body'],
+  IMAGE_TEXT: ['title', 'body'],
+  SERVICES: ['title'],
+  PROJECTS: ['title'],
+  POSTS: ['title'],
+  CTA: ['title', 'description', 'buttonLabel'],
+};
 
 const SECTION_TYPES: SectionType[] = [
   'HERO',
@@ -32,6 +45,37 @@ function toFormValue(value: unknown): string {
   return value === undefined || value === null ? '' : String(value);
 }
 
+/** Base `data` fields double as the TR content; `data.translations.en` holds optional per-field EN overrides. */
+function getEnTranslations(data: FormData): Record<string, unknown> {
+  const translations = data.translations as Record<string, unknown> | undefined;
+  return (translations?.en as Record<string, unknown> | undefined) ?? {};
+}
+
+function getLocalizedValue(data: FormData, key: string, locale: Locale): string {
+  return locale === 'tr' ? toFormValue(data[key]) : toFormValue(getEnTranslations(data)[key]);
+}
+
+function setLocalizedValue(
+  data: FormData,
+  key: string,
+  locale: Locale,
+  value: string,
+  onChange: (data: FormData) => void,
+) {
+  if (locale === 'tr') {
+    onChange({ ...data, [key]: value });
+    return;
+  }
+
+  const en = { ...getEnTranslations(data) };
+  if (value.trim().length === 0) {
+    delete en[key];
+  } else {
+    en[key] = value;
+  }
+  onChange({ ...data, translations: { ...(data.translations as object | undefined), en } });
+}
+
 function getSectionLabel(section: PageSection): string {
   const title = section.data.title;
   if (typeof title === 'string' && title.trim().length > 0) {
@@ -40,11 +84,22 @@ function getSectionLabel(section: PageSection): string {
   return SECTION_TYPE_LABELS[section.type];
 }
 
+function hasEnTranslation(section: PageSection): boolean {
+  const en = getEnTranslations(section.data as FormData);
+  return (TEXT_FIELDS[section.type] ?? []).some(
+    (key) => typeof en[key] === 'string' && (en[key] as string).trim().length > 0,
+  );
+}
+
 /** Local form state is string-friendly; this converts it back to the shape the API expects. */
 function prepareDataForSubmit(raw: FormData): Record<string, unknown> {
   const cleaned: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(raw)) {
+    if (key === 'translations') {
+      continue;
+    }
+
     if (value === undefined || value === null) {
       continue;
     }
@@ -67,6 +122,16 @@ function prepareDataForSubmit(raw: FormData): Record<string, unknown> {
     }
 
     cleaned[key] = value;
+  }
+
+  const cleanedEn = Object.fromEntries(
+    Object.entries(getEnTranslations(raw)).filter(
+      ([, value]) => typeof value === 'string' && value.trim().length > 0,
+    ),
+  );
+
+  if (Object.keys(cleanedEn).length > 0) {
+    cleaned.translations = { en: cleanedEn };
   }
 
   return cleaned;
@@ -108,12 +173,14 @@ function TextAreaField({
   onChange,
   required = false,
   rows = 4,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
   rows?: number;
+  placeholder?: string;
 }) {
   return (
     <div>
@@ -125,6 +192,7 @@ function TextAreaField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={rows}
+        placeholder={placeholder}
         className="w-full resize-y rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
       />
     </div>
@@ -187,22 +255,54 @@ function SelectField({
 function SectionDataFields({
   type,
   data,
+  locale,
   onChange,
 }: {
   type: SectionType;
   data: FormData;
+  locale: Locale;
   onChange: (data: FormData) => void;
 }) {
   function set(key: string, value: unknown) {
     onChange({ ...data, [key]: value });
   }
 
+  // Text fields are read/written per active locale — TR edits the base
+  // `data` fields directly, EN edits `data.translations.en` and leaves TR
+  // untouched. Technical fields (imageUrl, limit, buttonUrl, ...) always use
+  // `set()` above regardless of the active tab, since they're shared.
+  function text(key: string) {
+    return getLocalizedValue(data, key, locale);
+  }
+  function setText(key: string, value: string) {
+    setLocalizedValue(data, key, locale, value, onChange);
+  }
+  // On the EN tab, an empty field falls back to TR at render time — show the
+  // TR value as a placeholder so the editor can see what will actually appear.
+  function textPlaceholder(key: string, base?: string) {
+    if (locale !== 'en') return base;
+    const trValue = toFormValue(data[key]);
+    return trValue ? `TR: ${trValue}` : base;
+  }
+  const required = locale === 'tr';
+
   switch (type) {
     case 'HERO':
       return (
         <div className="space-y-4">
-          <TextField label="Başlık" value={toFormValue(data.title)} onChange={(v) => set('title', v)} required />
-          <TextField label="Alt Başlık" value={toFormValue(data.subtitle)} onChange={(v) => set('subtitle', v)} />
+          <TextField
+            label="Başlık"
+            value={text('title')}
+            onChange={(v) => setText('title', v)}
+            required={required}
+            placeholder={textPlaceholder('title')}
+          />
+          <TextField
+            label="Alt Başlık"
+            value={text('subtitle')}
+            onChange={(v) => setText('subtitle', v)}
+            placeholder={textPlaceholder('subtitle')}
+          />
           <MediaPicker
             label="Görsel"
             value={toFormValue(data.imageUrl)}
@@ -210,7 +310,12 @@ function SectionDataFields({
             accept="image"
           />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <TextField label="Buton Metni" value={toFormValue(data.ctaLabel)} onChange={(v) => set('ctaLabel', v)} />
+            <TextField
+              label="Buton Metni"
+              value={text('ctaLabel')}
+              onChange={(v) => setText('ctaLabel', v)}
+              placeholder={textPlaceholder('ctaLabel')}
+            />
             <TextField label="Buton URL" value={toFormValue(data.ctaUrl)} onChange={(v) => set('ctaUrl', v)} placeholder="/iletisim" />
           </div>
         </div>
@@ -219,16 +324,40 @@ function SectionDataFields({
     case 'TEXT':
       return (
         <div className="space-y-4">
-          <TextField label="Başlık" value={toFormValue(data.title)} onChange={(v) => set('title', v)} />
-          <TextAreaField label="Metin" value={toFormValue(data.body)} onChange={(v) => set('body', v)} required rows={6} />
+          <TextField
+            label="Başlık"
+            value={text('title')}
+            onChange={(v) => setText('title', v)}
+            placeholder={textPlaceholder('title')}
+          />
+          <TextAreaField
+            label="Metin"
+            value={text('body')}
+            onChange={(v) => setText('body', v)}
+            required={required}
+            rows={6}
+            placeholder={textPlaceholder('body')}
+          />
         </div>
       );
 
     case 'IMAGE_TEXT':
       return (
         <div className="space-y-4">
-          <TextField label="Başlık" value={toFormValue(data.title)} onChange={(v) => set('title', v)} />
-          <TextAreaField label="Metin" value={toFormValue(data.body)} onChange={(v) => set('body', v)} required rows={6} />
+          <TextField
+            label="Başlık"
+            value={text('title')}
+            onChange={(v) => setText('title', v)}
+            placeholder={textPlaceholder('title')}
+          />
+          <TextAreaField
+            label="Metin"
+            value={text('body')}
+            onChange={(v) => setText('body', v)}
+            required={required}
+            rows={6}
+            placeholder={textPlaceholder('body')}
+          />
           <MediaPicker
             label="Görsel"
             value={toFormValue(data.imageUrl)}
@@ -252,7 +381,12 @@ function SectionDataFields({
     case 'POSTS':
       return (
         <div className="space-y-4">
-          <TextField label="Başlık" value={toFormValue(data.title)} onChange={(v) => set('title', v)} />
+          <TextField
+            label="Başlık"
+            value={text('title')}
+            onChange={(v) => setText('title', v)}
+            placeholder={textPlaceholder('title')}
+          />
           <NumberField label="Gösterilecek Adet" value={toFormValue(data.limit)} onChange={(v) => set('limit', v)} />
         </div>
       );
@@ -260,10 +394,28 @@ function SectionDataFields({
     case 'CTA':
       return (
         <div className="space-y-4">
-          <TextField label="Başlık" value={toFormValue(data.title)} onChange={(v) => set('title', v)} required />
-          <TextAreaField label="Açıklama" value={toFormValue(data.description)} onChange={(v) => set('description', v)} rows={3} />
+          <TextField
+            label="Başlık"
+            value={text('title')}
+            onChange={(v) => setText('title', v)}
+            required={required}
+            placeholder={textPlaceholder('title')}
+          />
+          <TextAreaField
+            label="Açıklama"
+            value={text('description')}
+            onChange={(v) => setText('description', v)}
+            rows={3}
+            placeholder={textPlaceholder('description')}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <TextField label="Buton Metni" value={toFormValue(data.buttonLabel)} onChange={(v) => set('buttonLabel', v)} required />
+            <TextField
+              label="Buton Metni"
+              value={text('buttonLabel')}
+              onChange={(v) => setText('buttonLabel', v)}
+              required={required}
+              placeholder={textPlaceholder('buttonLabel')}
+            />
             <TextField label="Buton URL" value={toFormValue(data.buttonUrl)} onChange={(v) => set('buttonUrl', v)} required placeholder="/iletisim" />
           </div>
           <MediaPicker
@@ -292,6 +444,7 @@ function SectionEditor({
   onSave: (data: Record<string, unknown>) => Promise<void>;
 }) {
   const [data, setData] = useState<FormData>(initialData);
+  const [locale, setLocale] = useState<Locale>('tr');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -310,7 +463,14 @@ function SectionEditor({
 
   return (
     <div>
-      <SectionDataFields type={type} data={data} onChange={setData} />
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <LocaleTabs locale={locale} onChange={setLocale} />
+        <p className="text-xs text-zinc-500">
+          Görsel, buton URL&apos;si, limit gibi teknik alanlar dilden bağımsızdır.
+        </p>
+      </div>
+
+      <SectionDataFields type={type} data={data} locale={locale} onChange={setData} />
 
       {error && (
         <div className="mt-4 rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-xs text-red-300">
@@ -384,6 +544,11 @@ function SectionRow({
         <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[11px] font-medium text-indigo-400">
           {SECTION_TYPE_LABELS[section.type]}
         </span>
+        {hasEnTranslation(section) && (
+          <span className="ml-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+            EN ✓
+          </span>
+        )}
         <p className="mt-1.5 truncate text-sm text-white">{getSectionLabel(section)}</p>
       </div>
 
@@ -583,7 +748,8 @@ export function PageSectionBuilder({ page }: { page: Page }) {
         Sayfanızı hazır bloklardan oluşturun. Hiç bölüm eklemezseniz yukarıdaki Legacy İçerik alanı kullanılır.
       </p>
       <p className="mt-1 text-xs text-zinc-500">
-        Sayfa bölümleri şu an tüm diller için ortaktır.
+        Bölüm metinleri TR/EN olarak ayrı düzenlenir; İngilizce çevirisi boş bırakılan alanlarda Türkçe metin
+        gösterilir. Görsel, buton URL&apos;si, limit gibi teknik alanlar ortak kalır.
       </p>
 
       {error && (

@@ -1,4 +1,5 @@
 import { Locale } from '../generated/prisma/enums.js';
+import { resolveSectionLocale } from '../pages/page-section-data.validator.js';
 import { localize, localizeSettings, translationWhere } from '../translations/localize.js';
 import { Injectable, NotFoundException } from '@nestjs/common';
 
@@ -232,7 +233,16 @@ export class PublicService {
       throw new NotFoundException('Sayfa bulunamadı.');
     }
 
-    return localize(page, locale);
+    return {
+      ...localize(page, locale),
+      // Sections are shared across locales at rest — resolve each one's text
+      // fields (TR base + optional EN overrides) down to a flat `data` here
+      // so downstream consumers never need to know about `translations`.
+      sections: page.sections.map((section) => ({
+        ...section,
+        data: resolveSectionLocale(section.type, section.data, locale),
+      })),
+    };
   }
 
   getServices(query: PublicListQueryDto) {

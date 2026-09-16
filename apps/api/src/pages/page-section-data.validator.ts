@@ -1,8 +1,25 @@
 import { BadRequestException } from '@nestjs/common';
 
-import { SectionType } from '../generated/prisma/enums.js';
+import { Locale, SectionType } from '../generated/prisma/enums.js';
 
 type RawData = Record<string, unknown>;
+
+/**
+ * Per section type, the subset of `data` keys that hold display text (as
+ * opposed to technical/shared fields like imageUrl, limit, buttonUrl). These
+ * are the only keys ever read from/written to `data.translations.en` — the
+ * base `data` fields double as the TR content, so no separate `tr` bucket is
+ * needed and every pre-existing section is already valid TR content as-is.
+ */
+const TEXT_FIELDS: Record<SectionType, string[]> = {
+  HERO: ['title', 'subtitle', 'ctaLabel'],
+  TEXT: ['title', 'body'],
+  IMAGE_TEXT: ['title', 'body'],
+  SERVICES: ['title'],
+  PROJECTS: ['title'],
+  POSTS: ['title'],
+  CTA: ['title', 'description', 'buttonLabel'],
+};
 
 function str(raw: RawData, key: string, required = false): string | undefined {
   const value = raw[key];
@@ -50,7 +67,79 @@ export function validateSectionData(type: SectionType, data: unknown): RawData {
   }
 
   const raw = data as RawData;
+  const base = validateBaseFields(type, raw);
+  const translations = validateTranslations(type, raw);
 
+  return translations ? { ...base, translations } : base;
+}
+
+/** Validates translated (EN) overrides for the text fields of a section type. All optional — an absent or blank field simply falls back to the TR base field. */
+function validateTranslations(
+  type: SectionType,
+  raw: RawData,
+): { en: RawData } | undefined {
+  const translations = raw.translations;
+
+  if (translations === undefined || translations === null) {
+    return undefined;
+  }
+
+  if (typeof translations !== 'object' || Array.isArray(translations)) {
+    throw new BadRequestException('data.translations bir JSON nesnesi olmalıdır.');
+  }
+
+  const en = (translations as RawData).en;
+
+  if (en === undefined || en === null) {
+    return undefined;
+  }
+
+  if (typeof en !== 'object' || Array.isArray(en)) {
+    throw new BadRequestException('data.translations.en bir JSON nesnesi olmalıdır.');
+  }
+
+  const fields = TEXT_FIELDS[type] ?? [];
+  const cleanedEn = dropUndefined(
+    Object.fromEntries(fields.map((key) => [key, str(en as RawData, key)])),
+  );
+
+  return Object.keys(cleanedEn).length > 0 ? { en: cleanedEn } : undefined;
+}
+
+/** Resolves a section's `data` for public consumption at the given locale — TR reads the base fields as-is; EN overlays `data.translations.en` on top, field by field, falling back to the TR value wherever no EN override is set. */
+export function resolveSectionLocale(
+  type: SectionType,
+  data: unknown,
+  locale: Locale,
+): RawData {
+  const raw =
+    typeof data === 'object' && data !== null && !Array.isArray(data)
+      ? (data as RawData)
+      : {};
+  const { translations, ...base } = raw;
+
+  if (locale !== 'en') {
+    return base;
+  }
+
+  const en = (translations as { en?: RawData } | undefined)?.en;
+
+  if (!en) {
+    return base;
+  }
+
+  const merged = { ...base };
+  for (const key of TEXT_FIELDS[type] ?? []) {
+    const value = en[key];
+    if (typeof value === 'string' && value.trim() !== '') {
+      merged[key] = value;
+    }
+  }
+
+  return merged;
+}
+
+function validateBaseFields(type: SectionType, raw: RawData): RawData {
   switch (type) {
     case SectionType.HERO:
       return dropUndefined({
