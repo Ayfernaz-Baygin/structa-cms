@@ -58,7 +58,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <LocaleProvider locale={locale}>
-          <SiteHeader settings={settings} menu={headerMenu} />
+          <SiteHeader settings={settings} menu={headerMenu} locale={locale} />
           <main className="flex-1">{children}</main>
           <SiteFooter settings={settings} menu={footerMenu} />
         </LocaleProvider>

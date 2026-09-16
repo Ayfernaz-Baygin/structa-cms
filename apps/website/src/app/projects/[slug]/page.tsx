@@ -49,29 +49,27 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   return (
     <article>
       {coverUrl && (
-        <div className="relative aspect-[21/9] w-full overflow-hidden bg-stone-100">
+        <div className="relative aspect-21/9 w-full overflow-hidden bg-stone-100">
           <MediaImage src={coverUrl} alt={project.title} priority className="object-cover" />
         </div>
       )}
 
-      <Container className="py-16 sm:py-24">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_280px]">
+      <Container className="py-20 sm:py-28">
+        <div className="grid grid-cols-1 gap-16 lg:grid-cols-[1fr_300px]">
           <div>
-            <h1 className="font-(family-name:--font-display) text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            <h1 className="max-w-3xl font-(family-name:--font-display) text-5xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-6xl">
               {project.title}
             </h1>
             {project.shortDescription && (
-              <p className="mt-4 text-lg leading-relaxed text-muted">{project.shortDescription}</p>
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">{project.shortDescription}</p>
             )}
-            <div className="mt-10 space-y-4 text-base leading-relaxed text-foreground/90">
+            <div className="mt-12 max-w-2xl space-y-5 text-[17px] leading-[1.85] text-foreground/80">
               <RichText text={project.description} />
             </div>
 
             {project.images.length > 0 && (
-              <div className="mt-14">
-                <h2 className="font-(family-name:--font-display) text-2xl font-semibold text-foreground">
-                  Galeri
-                </h2>
+              <div className="mt-16">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Galeri</p>
                 <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
                   {project.images.map((image) => {
                     const imageUrl = resolveMediaUrl(image.imageUrl);
@@ -85,7 +83,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                         <MediaImage
                           src={imageUrl}
                           alt={image.altText ?? project.title}
-                          className="object-cover transition duration-300 hover:scale-105"
+                          className="object-cover transition duration-500 ease-out hover:scale-105"
                         />
                       </div>
                     );
@@ -96,13 +94,13 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           </div>
 
           {facts.length > 0 && (
-            <aside className="h-fit rounded-2xl border border-border bg-surface p-6">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Proje Bilgileri</h2>
-              <dl className="mt-4 space-y-4">
+            <aside className="h-fit rounded-2xl border border-border bg-surface p-7">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Proje Bilgileri</p>
+              <dl className="mt-5 space-y-5">
                 {facts.map((fact) => (
                   <div key={fact.label}>
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted">{fact.label}</dt>
-                    <dd className="mt-1 text-sm font-medium text-foreground">{fact.value}</dd>
+                    <dd className="mt-1.5 text-sm font-medium text-foreground">{fact.value}</dd>
                   </div>
                 ))}
               </dl>

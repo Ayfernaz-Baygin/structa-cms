@@ -41,24 +41,24 @@ export default async function PostDetailPage({ params }: PageProps) {
   return (
     <article>
       {coverUrl && (
-        <div className="relative aspect-[21/9] w-full overflow-hidden bg-stone-100">
+        <div className="relative aspect-21/9 w-full overflow-hidden bg-stone-100">
           <MediaImage src={coverUrl} alt={post.title} priority className="object-cover" />
         </div>
       )}
 
-      <Container className="py-16 sm:py-24">
+      <Container className="py-20 sm:py-28">
         <div className="mx-auto max-w-2xl">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-accent">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-accent">
             {post.category?.name && <span>{post.category.name}</span>}
             {post.category?.name && date && <span className="text-muted">·</span>}
             {date && <span className="text-muted normal-case tracking-normal">{date}</span>}
           </div>
-          <h1 className="mt-3 font-(family-name:--font-display) text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="mt-4 font-(family-name:--font-display) text-4xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
             {post.title}
           </h1>
-          {author && <p className="mt-4 text-sm text-muted">Yazar: {author}</p>}
+          {author && <p className="mt-5 text-sm text-muted">Yazar: {author}</p>}
 
-          <div className="mt-10 space-y-4 text-base leading-relaxed text-foreground/90">
+          <div className="mt-12 space-y-5 text-[17px] leading-[1.85] text-foreground/80">
             <RichText text={post.content} />
           </div>
         </div>

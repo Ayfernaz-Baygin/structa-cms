@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "@/components/locale-link";
 import { useEffect } from "react";
+
+import { Button } from "@/components/button";
 
 export default function ErrorPage({
   error,
@@ -15,14 +16,11 @@ export default function ErrorPage({
   }, [error]);
 
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center gap-4 px-4 py-24 text-center">
-      <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-        Bir şeyler ters gitti
-      </p>
-      <h1 className="font-(family-name:--font-display) text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+    <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center gap-5 px-4 py-24 text-center">
+      <h1 className="font-(family-name:--font-display) text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
         İçerik şu anda yüklenemiyor
       </h1>
-      <p className="text-base text-muted">
+      <p className="text-base leading-relaxed text-muted">
         Sunucuya ulaşırken bir sorun oluştu. Lütfen birkaç saniye sonra tekrar
         deneyin.
       </p>
@@ -30,16 +28,13 @@ export default function ErrorPage({
         <button
           type="button"
           onClick={reset}
-          className="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
+          className="inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-sm font-semibold tracking-wide text-accent-foreground transition duration-300 hover:bg-accent-strong"
         >
           Tekrar Dene
         </button>
-        <Link
-          href="/"
-          className="rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-black/[.03]"
-        >
+        <Button href="/" variant="outline">
           Ana Sayfa
-        </Link>
+        </Button>
       </div>
     </div>
   );

@@ -18,12 +18,12 @@ export function CmsPageContent({ page }: { page: Page }) {
   }
 
   return (
-    <Container className="py-16 sm:py-24">
+    <Container className="py-20 sm:py-28">
       <article className="mx-auto max-w-2xl">
-        <h1 className="font-(family-name:--font-display) text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+        <h1 className="font-(family-name:--font-display) text-4xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
           {page.title}
         </h1>
-        <div className="mt-8 space-y-4 text-base leading-relaxed text-foreground/90">
+        <div className="mt-10 space-y-5 text-[17px] leading-[1.85] text-foreground/80">
           <RichText text={page.body} />
         </div>
       </article>

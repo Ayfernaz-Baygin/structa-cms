@@ -1,5 +1,6 @@
 import Link from "@/components/locale-link";
 
+import { Container } from "@/components/container";
 import type { Menu, SiteSettings } from "@/lib/api";
 
 function SocialLink({ href, label }: { href: string | null; label: string }) {
@@ -12,7 +13,7 @@ function SocialLink({ href, label }: { href: string | null; label: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-white/80 transition hover:border-white/40 hover:text-white"
+      className="text-sm text-white/60 underline-offset-4 transition hover:text-white hover:underline"
     >
       {label}
     </a>
@@ -38,19 +39,19 @@ export function SiteFooter({
     settings.xUrl;
 
   return (
-    <footer className="mt-24 border-t border-white/10 bg-stone-900 text-white">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-3">
+    <footer className="mt-28 bg-stone-900 text-white">
+      <Container className="grid grid-cols-1 gap-14 py-20 sm:py-24 md:grid-cols-[1.3fr_1fr_1fr]">
         <div>
-          <p className="font-(family-name:--font-display) text-xl font-semibold">
+          <p className="font-(family-name:--font-display) text-3xl font-semibold tracking-tight">
             {siteName}
           </p>
           {settings.footerText && (
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/60">
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/55">
               {settings.footerText}
             </p>
           )}
           {hasSocial && (
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2">
               <SocialLink href={settings.instagramUrl} label="Instagram" />
               <SocialLink href={settings.facebookUrl} label="Facebook" />
               <SocialLink href={settings.linkedinUrl} label="LinkedIn" />
@@ -62,10 +63,10 @@ export function SiteFooter({
 
         {items.length > 0 && (
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/40">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
               Bağlantılar
             </p>
-            <nav className="mt-4 flex flex-col gap-2">
+            <nav className="mt-5 flex flex-col gap-3">
               {items.map((item) => (
                 <Link
                   key={item.id}
@@ -74,7 +75,7 @@ export function SiteFooter({
                   rel={
                     item.target === "BLANK" ? "noopener noreferrer" : undefined
                   }
-                  className="text-sm text-white/70 transition hover:text-white"
+                  className="w-fit text-sm text-white/70 underline-offset-4 transition hover:text-white hover:underline"
                 >
                   {item.label}
                 </Link>
@@ -85,14 +86,14 @@ export function SiteFooter({
 
         {(settings.email || settings.phone || settings.address) && (
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/40">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
               İletişim
             </p>
-            <div className="mt-4 flex flex-col gap-2 text-sm text-white/70">
+            <div className="mt-5 flex flex-col gap-3 text-sm text-white/70">
               {settings.email && (
                 <a
                   href={`mailto:${settings.email}`}
-                  className="transition hover:text-white"
+                  className="w-fit underline-offset-4 transition hover:text-white hover:underline"
                 >
                   {settings.email}
                 </a>
@@ -100,21 +101,25 @@ export function SiteFooter({
               {settings.phone && (
                 <a
                   href={`tel:${settings.phone}`}
-                  className="transition hover:text-white"
+                  className="w-fit underline-offset-4 transition hover:text-white hover:underline"
                 >
                   {settings.phone}
                 </a>
               )}
               {settings.address && (
-                <p className="whitespace-pre-line">{settings.address}</p>
+                <p className="whitespace-pre-line leading-relaxed">{settings.address}</p>
               )}
             </div>
           </div>
         )}
-      </div>
+      </Container>
 
-      <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-white/40 sm:px-6">
-        © {year} {siteName}. Tüm hakları saklıdır.
+      <div className="border-t border-white/10">
+        <Container className="flex flex-col items-center justify-between gap-2 py-6 text-xs text-white/40 sm:flex-row">
+          <span>
+            © {year} {siteName}. Tüm hakları saklıdır.
+          </span>
+        </Container>
       </div>
     </footer>
   );
